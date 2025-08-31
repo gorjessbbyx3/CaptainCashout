@@ -276,32 +276,114 @@ export default function PaymentPage() {
             </div>
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
-              {(creditPackages as any)?.packages?.map((pkg: CreditPackage) => (
+              {(creditPackages as any)?.packages?.map((pkg: CreditPackage, index: number) => (
                 <div
                   key={pkg.id}
                   data-testid={`package-${pkg.name.toLowerCase()}`}
-                  className={`group cursor-pointer transition-all duration-300 ${
+                  className={`group cursor-pointer transition-all duration-500 transform ${
                     selectedPackage?.id === pkg.id
-                      ? 'transform scale-105'
-                      : 'hover:transform hover:scale-105'
+                      ? 'scale-105 -translate-y-2'
+                      : 'hover:scale-105 hover:-translate-y-2'
                   }`}
                   onClick={() => handlePackageSelect(pkg)}
                 >
-                  <Card className={`h-full border-2 transition-all ${
+                  <Card className={`h-full relative overflow-hidden transition-all duration-500 ${
                     selectedPackage?.id === pkg.id
-                      ? 'border-black shadow-lg'
-                      : 'border-gray-200 hover:border-gray-400'
+                      ? 'shadow-2xl shadow-black/20 border-2 border-black'
+                      : 'shadow-lg hover:shadow-xl border border-gray-200 hover:border-gray-300'
                   }`}>
-                    <CardContent className="p-8 text-center">
-                      <div className="text-4xl font-light text-black mb-4">
+                    {/* Gradient Background */}
+                    <div className={`absolute inset-0 opacity-0 transition-opacity duration-500 ${
+                      selectedPackage?.id === pkg.id ? 'opacity-100' : 'group-hover:opacity-100'
+                    }`}>
+                      <div className={`absolute inset-0 ${
+                        index === 0 ? 'bg-gradient-to-br from-blue-50 to-indigo-100' :
+                        index === 1 ? 'bg-gradient-to-br from-purple-50 to-pink-100' :
+                        index === 2 ? 'bg-gradient-to-br from-green-50 to-emerald-100' :
+                        'bg-gradient-to-br from-orange-50 to-red-100'
+                      }`} />
+                    </div>
+                    
+                    {/* Selected Badge */}
+                    {selectedPackage?.id === pkg.id && (
+                      <div className="absolute top-4 right-4 z-10">
+                        <div className="bg-black text-white px-3 py-1 rounded-full text-xs font-medium">
+                          Selected
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Popular Badge for certain packages */}
+                    {pkg.bonusPercentage > 0 && (
+                      <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10">
+                        <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-4 py-2 rounded-full text-xs font-bold shadow-lg">
+                          POPULAR
+                        </div>
+                      </div>
+                    )}
+
+                    <CardContent className="p-8 text-center relative z-10">
+                      {/* Package Icon */}
+                      <div className="mb-6">
+                        <div className={`w-16 h-16 mx-auto rounded-full flex items-center justify-center transition-all duration-300 ${
+                          selectedPackage?.id === pkg.id
+                            ? 'bg-black text-white scale-110'
+                            : 'bg-gray-100 text-gray-600 group-hover:bg-gray-200'
+                        }`}>
+                          <span className="text-2xl font-bold">💰</span>
+                        </div>
+                      </div>
+
+                      {/* Price */}
+                      <div className="text-5xl font-bold text-black mb-2 transition-all duration-300 group-hover:scale-110">
                         ${pkg.price}
                       </div>
+                      
+                      {/* Package Name */}
+                      <div className="text-lg font-medium text-gray-600 mb-4">
+                        {pkg.name}
+                      </div>
+
+                      {/* Bonus Badge */}
                       {pkg.bonusPercentage > 0 && (
-                        <div className="mt-4 text-sm font-medium text-green-600">
+                        <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 mb-4">
+                          <span className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></span>
                           +{pkg.bonusPercentage}% Bonus
                         </div>
                       )}
+
+                      {/* Features */}
+                      <div className="space-y-2 text-sm text-gray-500">
+                        <div className="flex items-center justify-center">
+                          <span className="w-1 h-1 bg-gray-400 rounded-full mr-2"></span>
+                          Instant Delivery
+                        </div>
+                        <div className="flex items-center justify-center">
+                          <span className="w-1 h-1 bg-gray-400 rounded-full mr-2"></span>
+                          Secure Payment
+                        </div>
+                        <div className="flex items-center justify-center">
+                          <span className="w-1 h-1 bg-gray-400 rounded-full mr-2"></span>
+                          24/7 Support
+                        </div>
+                      </div>
+
+                      {/* Selection Indicator */}
+                      <div className={`mt-6 w-full h-1 rounded-full transition-all duration-300 ${
+                        selectedPackage?.id === pkg.id
+                          ? 'bg-black'
+                          : 'bg-gray-200 group-hover:bg-gray-300'
+                      }`} />
                     </CardContent>
+
+                    {/* Hover Glow Effect */}
+                    <div className={`absolute inset-0 rounded-lg transition-opacity duration-300 ${
+                      selectedPackage?.id === pkg.id
+                        ? 'opacity-100'
+                        : 'opacity-0 group-hover:opacity-100'
+                    }`}>
+                      <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-transparent via-white/10 to-transparent animate-pulse" />
+                    </div>
                   </Card>
                 </div>
               ))}
