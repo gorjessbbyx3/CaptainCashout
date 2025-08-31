@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
@@ -31,7 +32,6 @@ const trustlySchema = z.object({
 type PaymentForm = z.infer<typeof paymentFormSchema>;
 type TrustlyForm = z.infer<typeof trustlySchema>;
 
-
 interface CreditPackage {
   id: string;
   name: string;
@@ -43,6 +43,8 @@ interface CreditPackage {
 export default function PaymentPage() {
   const [username, setUsername] = useState<string>("");
   const [selectedPackage, setSelectedPackage] = useState<CreditPackage | null>(null);
+  const [customAmount, setCustomAmount] = useState<string>("");
+  const [useCustomAmount, setUseCustomAmount] = useState<boolean>(false);
   const [paymentMethod, setPaymentMethod] = useState<'stripe' | 'trustly'>('stripe');
   const [clientSecret, setClientSecret] = useState<string>("");
   const [isPaymentReady, setIsPaymentReady] = useState(false);
@@ -56,12 +58,26 @@ export default function PaymentPage() {
     queryKey: ['/api/credit-packages'],
   });
 
+  const getPaymentAmount = () => {
+    if (useCustomAmount && customAmount) {
+      return customAmount;
+    }
+    return selectedPackage?.price || "";
+  };
+
+  const getCreditsAmount = () => {
+    if (useCustomAmount && customAmount) {
+      // Calculate credits based on custom amount (assuming 1 credit per $1)
+      return parseInt(customAmount) * 100;
+    }
+    return selectedPackage?.credits || 0;
+  };
 
   const createPaymentIntentMutation = useMutation({
     mutationFn: async ({ packageId, amount }: { packageId: string; amount: string }) => {
       const response = await apiRequest("POST", "/api/create-payment-intent", {
         username,
-        packageId,
+        packageId: useCustomAmount ? 'custom' : packageId,
         amount,
         paymentMethod: 'stripe_card'
       });
@@ -85,8 +101,8 @@ export default function PaymentPage() {
     mutationFn: async (data: TrustlyForm) => {
       const response = await apiRequest("POST", "/api/trustly-payment", {
         username,
-        packageId: selectedPackage?.id,
-        amount: selectedPackage?.price,
+        packageId: useCustomAmount ? 'custom' : selectedPackage?.id,
+        amount: getPaymentAmount(),
         country: data.country,
         firstName: data.firstName,
         lastName: data.lastName,
@@ -96,7 +112,6 @@ export default function PaymentPage() {
     },
     onSuccess: (data) => {
       if (data.success) {
-        // Redirect to Trustly's payment page
         if (data.redirectUrl) {
           window.open(data.redirectUrl, '_blank');
         }
@@ -104,10 +119,7 @@ export default function PaymentPage() {
           title: "Payment Initiated!",
           description: "You'll be redirected to complete your bank transfer.",
         });
-        setUsername("");
-        setSelectedPackage(null);
-        setIsPaymentReady(false);
-        paymentForm.reset();
+        resetForm();
       } else {
         toast({
           title: "Payment Failed",
@@ -118,9 +130,19 @@ export default function PaymentPage() {
     },
   });
 
+  const resetForm = () => {
+    setUsername("");
+    setSelectedPackage(null);
+    setCustomAmount("");
+    setUseCustomAmount(false);
+    setIsPaymentReady(false);
+    paymentForm.reset();
+  };
 
   const handlePackageSelect = (pkg: CreditPackage) => {
     setSelectedPackage(pkg);
+    setUseCustomAmount(false);
+    setCustomAmount("");
     if (paymentMethod === 'stripe' && username) {
       createPaymentIntentMutation.mutate({
         packageId: pkg.id,
@@ -129,18 +151,40 @@ export default function PaymentPage() {
     }
   };
 
+  const handleCustomAmountChange = (amount: string) => {
+    setCustomAmount(amount);
+    setUseCustomAmount(true);
+    setSelectedPackage(null);
+    setIsPaymentReady(false);
+    setClientSecret("");
+  };
+
+  const handleCustomAmountConfirm = () => {
+    if (customAmount && parseFloat(customAmount) >= 1 && username) {
+      if (paymentMethod === 'stripe') {
+        createPaymentIntentMutation.mutate({
+          packageId: 'custom',
+          amount: customAmount
+        });
+      }
+    }
+  };
+
   const handlePaymentMethodChange = (method: 'stripe' | 'trustly') => {
     setPaymentMethod(method);
     setIsPaymentReady(false);
     setClientSecret("");
     
-    if (method === 'stripe' && selectedPackage && username) {
+    const amount = getPaymentAmount();
+    if (method === 'stripe' && amount && username) {
       createPaymentIntentMutation.mutate({
-        packageId: selectedPackage.id,
-        amount: selectedPackage.price
+        packageId: useCustomAmount ? 'custom' : selectedPackage?.id || '',
+        amount
       });
     }
   };
+
+  const isReadyForPayment = username && (selectedPackage || (useCustomAmount && customAmount && parseFloat(customAmount) >= 1));
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-900">
@@ -175,42 +219,44 @@ export default function PaymentPage() {
 
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
-          {/* Hero Section */}
+          {/* Hero Section with New Background */}
           <div className="relative text-center mb-12 overflow-hidden rounded-2xl">
             {/* Background Image */}
             <div 
-              className="absolute inset-0 bg-cover bg-center opacity-20"
+              className="absolute inset-0 bg-cover bg-center"
               style={{
-                backgroundImage: `url('/attached_assets/IMG_4688_1756680598898.webp')`,
+                backgroundImage: `url('/attached_assets/IMG_4688_1756681796461.webp')`,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
-                filter: 'brightness(0.3) saturate(1.2)'
+                filter: 'brightness(0.4) saturate(1.1)'
               }}
             />
             {/* Gradient Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-slate-950/20" />
             
             {/* Content */}
-            <div className="relative z-10 py-12 px-6">
-              <h2 className="text-4xl md:text-5xl font-bold mb-4">
-                <span className="bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent">
-                  Power Up
-                </span>{" "}
-                <span className="text-white">Your Account</span>
+            <div className="relative z-10 py-16 px-6">
+              <h2 className="text-5xl md:text-6xl font-bold mb-6">
+                <span className="bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400 bg-clip-text text-transparent">
+                  ALL PLATFORMS
+                </span>
               </h2>
-              <p className="text-xl text-slate-300 mb-6">Quick, secure, and hassle-free credit top-ups</p>
-              <div className="flex items-center justify-center space-x-6 text-sm text-slate-400">
+              <h3 className="text-3xl md:text-4xl font-bold mb-4 text-white">
+                BUY NOW
+              </h3>
+              <p className="text-xl text-slate-200 mb-8">Choose your package or enter any amount</p>
+              <div className="flex items-center justify-center space-x-8 text-sm text-slate-300">
                 <div className="flex items-center space-x-2">
                   <span className="text-yellow-400">⚡</span>
                   <span>Instant Processing</span>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <span className="text-purple-400">👥</span>
-                  <span>2M+ Active Players</span>
+                  <span className="text-purple-400">🎮</span>
+                  <span>All Games Supported</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <span className="text-green-400">🏆</span>
-                  <span>99.9% Uptime</span>
+                  <span>Best Rates</span>
                 </div>
               </div>
             </div>
@@ -218,7 +264,7 @@ export default function PaymentPage() {
 
           <div className="grid lg:grid-cols-2 gap-8">
             {/* Username Input */}
-            <Card className="bg-slate-800 border-slate-700" data-testid="username-input-card">
+            <Card className="bg-slate-800/90 backdrop-blur-sm border-slate-700" data-testid="username-input-card">
               <CardContent className="p-6">
                 <div className="flex items-center space-x-3 mb-6">
                   <div className="w-10 h-10 bg-blue-600/20 rounded-lg flex items-center justify-center">
@@ -258,64 +304,145 @@ export default function PaymentPage() {
               </CardContent>
             </Card>
 
-            {/* Credit Packages */}
-            <Card className="bg-slate-800 border-slate-700" data-testid="credit-packages-card">
+            {/* Amount Selection */}
+            <Card className="bg-slate-800/90 backdrop-blur-sm border-slate-700" data-testid="amount-selection-card">
               <CardContent className="p-6">
                 <div className="flex items-center space-x-3 mb-6">
                   <div className="w-10 h-10 bg-yellow-500/20 rounded-lg flex items-center justify-center">
                     <span className="text-yellow-400">💎</span>
                   </div>
                   <div>
-                    <h3 className="text-xl font-semibold text-white">Credit Packages</h3>
-                    <p className="text-sm text-slate-400">Choose your top-up amount</p>
+                    <h3 className="text-xl font-semibold text-white">Choose Amount</h3>
+                    <p className="text-sm text-slate-400">Select a package or enter custom amount</p>
                   </div>
                 </div>
 
-                {packagesLoading ? (
-                  <div className="flex justify-center py-8">
-                    <LoadingSpinner />
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-2 gap-3 mb-6">
-                    {(creditPackages as any)?.packages?.map((pkg: CreditPackage) => (
-                      <div
-                        key={pkg.id}
-                        data-testid={`package-${pkg.name.toLowerCase()}`}
-                        className={`cursor-pointer rounded-lg p-4 transition-all ${
-                          selectedPackage?.id === pkg.id
-                            ? 'bg-blue-600/20 border-2 border-blue-500'
-                            : 'bg-slate-700/50 border border-slate-600 hover:border-blue-500'
-                        }`}
-                        onClick={() => handlePackageSelect(pkg)}
-                      >
-                        <div className="text-center">
-                          <div className="text-2xl font-bold text-blue-400 mb-1">
-                            ${pkg.price}
-                          </div>
-                          <div className="text-sm text-slate-300">
-                            {pkg.credits.toLocaleString()} Credits
-                          </div>
-                          {pkg.bonusPercentage > 0 && (
-                            <div className="text-xs text-green-400 mt-1">
-                              +{pkg.bonusPercentage}% Bonus
+                {/* Toggle between packages and custom amount */}
+                <div className="flex space-x-4 mb-6">
+                  <Button
+                    variant={!useCustomAmount ? "default" : "outline"}
+                    className={`flex-1 ${!useCustomAmount ? 'bg-blue-600 hover:bg-blue-700' : 'border-slate-600 text-slate-300 hover:bg-slate-700'}`}
+                    onClick={() => {
+                      setUseCustomAmount(false);
+                      setCustomAmount("");
+                      setIsPaymentReady(false);
+                      setClientSecret("");
+                    }}
+                  >
+                    📦 Packages
+                  </Button>
+                  <Button
+                    variant={useCustomAmount ? "default" : "outline"}
+                    className={`flex-1 ${useCustomAmount ? 'bg-blue-600 hover:bg-blue-700' : 'border-slate-600 text-slate-300 hover:bg-slate-700'}`}
+                    onClick={() => {
+                      setUseCustomAmount(true);
+                      setSelectedPackage(null);
+                      setIsPaymentReady(false);
+                      setClientSecret("");
+                    }}
+                  >
+                    💰 Custom Amount
+                  </Button>
+                </div>
+
+                {!useCustomAmount && (
+                  <>
+                    {packagesLoading ? (
+                      <div className="flex justify-center py-8">
+                        <LoadingSpinner />
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 gap-3 mb-6">
+                        {(creditPackages as any)?.packages?.map((pkg: CreditPackage) => (
+                          <div
+                            key={pkg.id}
+                            data-testid={`package-${pkg.name.toLowerCase()}`}
+                            className={`cursor-pointer rounded-lg p-4 transition-all ${
+                              selectedPackage?.id === pkg.id
+                                ? 'bg-blue-600/20 border-2 border-blue-500'
+                                : 'bg-slate-700/50 border border-slate-600 hover:border-blue-500'
+                            }`}
+                            onClick={() => handlePackageSelect(pkg)}
+                          >
+                            <div className="text-center">
+                              <div className="text-2xl font-bold text-blue-400 mb-1">
+                                ${pkg.price}
+                              </div>
+                              <div className="text-sm text-slate-300">
+                                {pkg.credits.toLocaleString()} Credits
+                              </div>
+                              {pkg.bonusPercentage > 0 && (
+                                <div className="text-xs text-green-400 mt-1">
+                                  +{pkg.bonusPercentage}% Bonus
+                                </div>
+                              )}
                             </div>
-                          )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {useCustomAmount && (
+                  <div className="space-y-4 mb-6">
+                    <div>
+                      <Label htmlFor="customAmount" className="text-white">Custom Amount ($)</Label>
+                      <Input
+                        id="customAmount"
+                        data-testid="input-custom-amount"
+                        type="number"
+                        min="1"
+                        step="0.01"
+                        placeholder="Enter amount (minimum $1)"
+                        className="bg-slate-700 border-slate-600 text-white placeholder-slate-400"
+                        value={customAmount}
+                        onChange={(e) => handleCustomAmountChange(e.target.value)}
+                      />
+                    </div>
+                    
+                    {customAmount && parseFloat(customAmount) >= 1 && (
+                      <div className="bg-green-900/20 border border-green-700/50 rounded-lg p-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-slate-300">You'll receive:</span>
+                          <span className="text-green-400 font-bold">
+                            {(parseInt(customAmount) * 100).toLocaleString()} Credits
+                          </span>
                         </div>
                       </div>
-                    ))}
+                    )}
+
+                    {customAmount && parseFloat(customAmount) < 1 && (
+                      <div className="bg-red-900/20 border border-red-700/50 rounded-lg p-3">
+                        <p className="text-red-400 text-sm">Minimum amount is $1.00</p>
+                      </div>
+                    )}
+
+                    {customAmount && parseFloat(customAmount) >= 1 && username && (
+                      <Button
+                        onClick={handleCustomAmountConfirm}
+                        className="w-full bg-green-600 hover:bg-green-700 text-white"
+                        data-testid="button-confirm-custom-amount"
+                      >
+                        Confirm ${customAmount}
+                      </Button>
+                    )}
                   </div>
                 )}
 
-                {selectedPackage && (
+                {/* Selection Summary */}
+                {(selectedPackage || (useCustomAmount && customAmount && parseFloat(customAmount) >= 1)) && (
                   <div className="bg-blue-900/20 border border-blue-700/50 rounded-lg p-4" data-testid="selected-package">
                     <div className="flex items-center justify-between">
-                      <span className="font-medium text-white">Selected Package:</span>
-                      <span className="text-blue-400 font-bold">${selectedPackage.price}</span>
+                      <span className="font-medium text-white">
+                        {useCustomAmount ? 'Custom Amount:' : 'Selected Package:'}
+                      </span>
+                      <span className="text-blue-400 font-bold">${getPaymentAmount()}</span>
                     </div>
                     <div className="flex items-center justify-between mt-2">
                       <span className="text-sm text-slate-400">Credits:</span>
                       <span className="text-sm font-medium text-white">
-                        {selectedPackage.credits.toLocaleString()}
+                        {getCreditsAmount().toLocaleString()}
                       </span>
                     </div>
                   </div>
@@ -325,8 +452,8 @@ export default function PaymentPage() {
           </div>
 
           {/* Payment Methods */}
-          {username && selectedPackage && (
-            <Card className="mt-8 bg-slate-800 border-slate-700" data-testid="payment-methods-card">
+          {isReadyForPayment && (
+            <Card className="mt-8 bg-slate-800/90 backdrop-blur-sm border-slate-700" data-testid="payment-methods-card">
               <CardContent className="p-6">
                 <div className="flex items-center space-x-3 mb-6">
                   <div className="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
@@ -399,16 +526,14 @@ export default function PaymentPage() {
                           <StripePaymentForm
                             clientSecret={clientSecret}
                             isReady={isPaymentReady}
-                            amount={selectedPackage.price}
-                            credits={selectedPackage.credits}
+                            amount={getPaymentAmount()}
+                            credits={getCreditsAmount()}
                             onSuccess={() => {
                               toast({
                                 title: "Payment Successful!",
-                                description: `${selectedPackage.credits} credits have been added to your account.`,
+                                description: `${getCreditsAmount()} credits have been added to your account.`,
                               });
-                              setUsername("");
-                              setSelectedPackage(null);
-                              setIsPaymentReady(false);
+                              resetForm();
                             }}
                           />
                         )}
@@ -419,7 +544,7 @@ export default function PaymentPage() {
                       <TrustlyForm
                         onSubmit={trustlyMutation.mutate}
                         isLoading={trustlyMutation.isPending}
-                        amount={selectedPackage.price}
+                        amount={getPaymentAmount()}
                       />
                     )}
                   </div>
@@ -430,7 +555,7 @@ export default function PaymentPage() {
 
           {/* Trust Indicators */}
           <div className="mt-8 grid md:grid-cols-3 gap-6">
-            <Card className="bg-slate-800 border-slate-700 text-center">
+            <Card className="bg-slate-800/90 backdrop-blur-sm border-slate-700 text-center">
               <CardContent className="p-6">
                 <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
                   <span className="text-green-400 text-2xl">🛡️</span>
@@ -440,7 +565,7 @@ export default function PaymentPage() {
               </CardContent>
             </Card>
 
-            <Card className="bg-slate-800 border-slate-700 text-center">
+            <Card className="bg-slate-800/90 backdrop-blur-sm border-slate-700 text-center">
               <CardContent className="p-6">
                 <div className="w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
                   <span className="text-blue-400 text-2xl">⚡</span>
@@ -450,7 +575,7 @@ export default function PaymentPage() {
               </CardContent>
             </Card>
 
-            <Card className="bg-slate-800 border-slate-700 text-center">
+            <Card className="bg-slate-800/90 backdrop-blur-sm border-slate-700 text-center">
               <CardContent className="p-6">
                 <div className="w-16 h-16 bg-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
                   <span className="text-purple-400 text-2xl">🎧</span>
