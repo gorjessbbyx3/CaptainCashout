@@ -287,7 +287,7 @@ export default function PaymentPage() {
                   }`}
                   onClick={() => handlePackageSelect(pkg)}
                 >
-                  <Card className={`h-full relative overflow-hidden transition-all duration-500 ${
+                  <Card className={`h-full relative overflow-hidden transition-all duration-500 bg-white text-gray-900 ${
                     selectedPackage?.id === pkg.id
                       ? 'shadow-2xl shadow-black/20 border-2 border-black'
                       : 'shadow-lg hover:shadow-xl border border-gray-200 hover:border-gray-300'
