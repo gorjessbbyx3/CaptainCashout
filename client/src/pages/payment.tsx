@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
@@ -173,7 +172,7 @@ export default function PaymentPage() {
     setPaymentMethod(method);
     setIsPaymentReady(false);
     setClientSecret("");
-    
+
     const amount = getPaymentAmount();
     if (method === 'stripe' && amount && username) {
       createPaymentIntentMutation.mutate({
@@ -207,7 +206,7 @@ export default function PaymentPage() {
       </nav>
 
       {/* Hero Section - Tesla Style */}
-      <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+      <section className="relative min-h-screen flex items-end justify-center overflow-hidden">
         {/* Background Image */}
         <div 
           className="absolute inset-0 bg-cover bg-center"
@@ -217,14 +216,11 @@ export default function PaymentPage() {
             backgroundPosition: 'center',
           }}
         />
-        
-        {/* Dark Overlay */}
-        <div className="absolute inset-0 bg-black/60" />
-        
+
         {/* Content */}
-        <div className="relative z-10 text-center px-6 max-w-6xl mx-auto">
+        <div className="relative z-10 text-center px-6 max-w-6xl mx-auto pb-16">
           {/* Tesla-style CTA */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Button 
               className="bg-white text-black hover:bg-gray-100 px-12 py-4 text-lg font-medium rounded-none border-0"
               onClick={() => document.getElementById('packages')?.scrollIntoView({ behavior: 'smooth' })}
@@ -239,22 +235,6 @@ export default function PaymentPage() {
               Custom Amount
             </Button>
           </div>
-
-          {/* Minimal Stats */}
-          <div className="grid grid-cols-3 gap-12 text-white">
-            <div className="text-center">
-              <div className="text-3xl font-light mb-2">&lt; 1s</div>
-              <div className="text-sm font-light opacity-80">Processing Time</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-light mb-2">100%</div>
-              <div className="text-sm font-light opacity-80">Secure</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-light mb-2">24/7</div>
-              <div className="text-sm font-light opacity-80">Support</div>
-            </div>
-          </div>
         </div>
       </section>
 
@@ -263,7 +243,7 @@ export default function PaymentPage() {
         <div className="max-w-4xl mx-auto px-6 text-center">
           <h3 className="text-4xl font-light text-black mb-4">Enter Your Username</h3>
           <p className="text-xl text-gray-600 mb-12 font-light">Simple. Secure. Fast.</p>
-          
+
           <div className="max-w-md mx-auto">
             <Input
               data-testid="input-username"
@@ -272,7 +252,7 @@ export default function PaymentPage() {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
             />
-            
+
             {username && (
               <div className="mt-8 p-6 bg-white rounded-lg shadow-sm border border-gray-200" data-testid="username-entered">
                 <div className="text-black font-medium">Ready: {username}</div>
@@ -373,7 +353,7 @@ export default function PaymentPage() {
         <section id="custom" className="py-16 bg-gray-50">
           <div className="max-w-2xl mx-auto px-6 text-center">
             <h3 className="text-3xl font-light text-black mb-8">Enter Any Amount</h3>
-            
+
             <div className="max-w-sm mx-auto mb-8">
               <div className="relative">
                 <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-2xl text-gray-400">$</span>
@@ -388,7 +368,7 @@ export default function PaymentPage() {
                   onChange={(e) => handleCustomAmountChange(e.target.value)}
                 />
               </div>
-              
+
               {customAmount && parseFloat(customAmount) >= 1 && (
                 <div className="mt-6 text-gray-600">
                   <span className="text-lg font-light">
@@ -621,7 +601,7 @@ function StripeCheckoutForm({
       <div className="[&_.Input]:border-0 [&_.Input]:border-b-2 [&_.Input]:border-gray-300 [&_.Input]:rounded-none [&_.Input]:h-12">
         <PaymentElement />
       </div>
-      
+
       <Button
         type="submit"
         data-testid="button-complete-payment"
@@ -671,7 +651,7 @@ function TrustlyForm({
             </p>
           )}
         </div>
-        
+
         <div>
           <Input
             data-testid="input-last-name"
@@ -686,7 +666,7 @@ function TrustlyForm({
           )}
         </div>
       </div>
-      
+
       <div>
         <Input
           data-testid="input-email"
@@ -701,7 +681,7 @@ function TrustlyForm({
           </p>
         )}
       </div>
-      
+
       <div>
         <select
           data-testid="select-country"
