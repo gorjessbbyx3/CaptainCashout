@@ -21,12 +21,15 @@ const paymentFormSchema = z.object({
   username: z.string().min(1, "Username is required"),
 });
 
-const cellPaySchema = z.object({
-  phoneNumber: z.string().min(10, "Valid phone number is required"),
+const trustlySchema = z.object({
+  country: z.string().min(2, "Country is required"),
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+  email: z.string().email("Valid email is required"),
 });
 
 type PaymentForm = z.infer<typeof paymentFormSchema>;
-type CellPayForm = z.infer<typeof cellPaySchema>;
+type TrustlyForm = z.infer<typeof trustlySchema>;
 
 
 interface CreditPackage {
@@ -40,7 +43,7 @@ interface CreditPackage {
 export default function PaymentPage() {
   const [username, setUsername] = useState<string>("");
   const [selectedPackage, setSelectedPackage] = useState<CreditPackage | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState<'stripe' | 'cellpay'>('stripe');
+  const [paymentMethod, setPaymentMethod] = useState<'stripe' | 'trustly'>('stripe');
   const [clientSecret, setClientSecret] = useState<string>("");
   const [isPaymentReady, setIsPaymentReady] = useState(false);
   const { toast } = useToast();
@@ -78,21 +81,28 @@ export default function PaymentPage() {
     },
   });
 
-  const cellPayMutation = useMutation({
-    mutationFn: async (data: CellPayForm) => {
-      const response = await apiRequest("POST", "/api/cellpay-payment", {
+  const trustlyMutation = useMutation({
+    mutationFn: async (data: TrustlyForm) => {
+      const response = await apiRequest("POST", "/api/trustly-payment", {
         username,
         packageId: selectedPackage?.id,
         amount: selectedPackage?.price,
-        phoneNumber: data.phoneNumber
+        country: data.country,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email
       });
       return response.json();
     },
     onSuccess: (data) => {
       if (data.success) {
+        // Redirect to Trustly's payment page
+        if (data.redirectUrl) {
+          window.open(data.redirectUrl, '_blank');
+        }
         toast({
-          title: "Payment Successful!",
-          description: `${selectedPackage?.credits} credits have been added to your account.`,
+          title: "Payment Initiated!",
+          description: "You'll be redirected to complete your bank transfer.",
         });
         setUsername("");
         setSelectedPackage(null);
@@ -119,7 +129,7 @@ export default function PaymentPage() {
     }
   };
 
-  const handlePaymentMethodChange = (method: 'stripe' | 'cellpay') => {
+  const handlePaymentMethodChange = (method: 'stripe' | 'trustly') => {
     setPaymentMethod(method);
     setIsPaymentReady(false);
     setClientSecret("");
@@ -352,21 +362,21 @@ export default function PaymentPage() {
                     </div>
 
                     <div
-                      data-testid="payment-method-cellpay"
+                      data-testid="payment-method-trustly"
                       className={`cursor-pointer rounded-lg p-4 transition-all ${
-                        paymentMethod === 'cellpay'
-                          ? 'bg-purple-600/20 border-2 border-purple-500'
-                          : 'bg-slate-700/50 border border-slate-600 hover:border-purple-500'
+                        paymentMethod === 'trustly'
+                          ? 'bg-blue-600/20 border-2 border-blue-500'
+                          : 'bg-slate-700/50 border border-slate-600 hover:border-blue-500'
                       }`}
-                      onClick={() => handlePaymentMethodChange('cellpay')}
+                      onClick={() => handlePaymentMethodChange('trustly')}
                     >
                       <div className="flex items-center space-x-3">
-                        <span className="text-purple-400 text-xl">📱</span>
+                        <span className="text-blue-400 text-xl">🏦</span>
                         <div>
-                          <p className="font-medium text-white">CellPay</p>
-                          <p className="text-sm text-slate-400">Quick mobile payments</p>
+                          <p className="font-medium text-white">Trustly</p>
+                          <p className="text-sm text-slate-400">Secure bank transfers</p>
                         </div>
-                        <div className="ml-auto bg-purple-600 text-white px-2 py-1 rounded text-xs">
+                        <div className="ml-auto bg-blue-600 text-white px-2 py-1 rounded text-xs">
                           Popular
                         </div>
                       </div>
@@ -405,10 +415,10 @@ export default function PaymentPage() {
                       </>
                     )}
 
-                    {paymentMethod === 'cellpay' && (
-                      <CellPayForm
-                        onSubmit={cellPayMutation.mutate}
-                        isLoading={cellPayMutation.isPending}
+                    {paymentMethod === 'trustly' && (
+                      <TrustlyForm
+                        onSubmit={trustlyMutation.mutate}
+                        isLoading={trustlyMutation.isPending}
                         amount={selectedPackage.price}
                       />
                     )}
@@ -570,49 +580,110 @@ function StripeCheckoutForm({
   );
 }
 
-// CellPay Form Component
-function CellPayForm({ 
+// Trustly Form Component
+function TrustlyForm({ 
   onSubmit, 
   isLoading, 
   amount 
 }: { 
-  onSubmit: (data: CellPayForm) => void; 
+  onSubmit: (data: TrustlyForm) => void; 
   isLoading: boolean; 
   amount: string; 
 }) {
-  const cellPayForm = useForm<CellPayForm>({
-    resolver: zodResolver(cellPaySchema),
+  const trustlyForm = useForm<TrustlyForm>({
+    resolver: zodResolver(trustlySchema),
   });
 
   return (
-    <form onSubmit={cellPayForm.handleSubmit(onSubmit)} className="space-y-4">
+    <form onSubmit={trustlyForm.handleSubmit(onSubmit)} className="space-y-4">
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="firstName" className="text-white">First Name</Label>
+          <Input
+            id="firstName"
+            data-testid="input-first-name"
+            placeholder="Enter your first name"
+            className="bg-slate-700 border-slate-600 text-white placeholder-slate-400"
+            {...trustlyForm.register("firstName")}
+          />
+          {trustlyForm.formState.errors.firstName && (
+            <p className="text-red-400 text-sm mt-1">
+              {trustlyForm.formState.errors.firstName.message}
+            </p>
+          )}
+        </div>
+        
+        <div>
+          <Label htmlFor="lastName" className="text-white">Last Name</Label>
+          <Input
+            id="lastName"
+            data-testid="input-last-name"
+            placeholder="Enter your last name"
+            className="bg-slate-700 border-slate-600 text-white placeholder-slate-400"
+            {...trustlyForm.register("lastName")}
+          />
+          {trustlyForm.formState.errors.lastName && (
+            <p className="text-red-400 text-sm mt-1">
+              {trustlyForm.formState.errors.lastName.message}
+            </p>
+          )}
+        </div>
+      </div>
+      
       <div>
-        <Label htmlFor="phoneNumber" className="text-white">Phone Number</Label>
+        <Label htmlFor="email" className="text-white">Email Address</Label>
         <Input
-          id="phoneNumber"
-          data-testid="input-phone-number"
-          placeholder="Enter your phone number"
+          id="email"
+          data-testid="input-email"
+          type="email"
+          placeholder="Enter your email address"
           className="bg-slate-700 border-slate-600 text-white placeholder-slate-400"
-          {...cellPayForm.register("phoneNumber")}
+          {...trustlyForm.register("email")}
         />
-        {cellPayForm.formState.errors.phoneNumber && (
+        {trustlyForm.formState.errors.email && (
           <p className="text-red-400 text-sm mt-1">
-            {cellPayForm.formState.errors.phoneNumber.message}
+            {trustlyForm.formState.errors.email.message}
+          </p>
+        )}
+      </div>
+      
+      <div>
+        <Label htmlFor="country" className="text-white">Country</Label>
+        <select
+          id="country"
+          data-testid="select-country"
+          className="w-full p-3 bg-slate-700 border border-slate-600 text-white rounded-md"
+          {...trustlyForm.register("country")}
+        >
+          <option value="">Select your country</option>
+          <option value="US">United States</option>
+          <option value="CA">Canada</option>
+          <option value="SE">Sweden</option>
+          <option value="FI">Finland</option>
+          <option value="NO">Norway</option>
+          <option value="DK">Denmark</option>
+          <option value="DE">Germany</option>
+          <option value="NL">Netherlands</option>
+          <option value="GB">United Kingdom</option>
+        </select>
+        {trustlyForm.formState.errors.country && (
+          <p className="text-red-400 text-sm mt-1">
+            {trustlyForm.formState.errors.country.message}
           </p>
         )}
       </div>
 
-      <div className="bg-purple-900/20 border border-purple-700/50 rounded-lg p-3">
+      <div className="bg-blue-900/20 border border-blue-700/50 rounded-lg p-3">
         <div className="flex items-center space-x-2 text-sm">
-          <span className="text-purple-400">📱</span>
-          <span className="text-purple-400">CellPay payment link will be sent to your phone</span>
+          <span className="text-blue-400">🏦</span>
+          <span className="text-blue-400">You'll be redirected to your bank to complete the transfer</span>
         </div>
       </div>
 
       <Button
         type="submit"
-        data-testid="button-cellpay-payment"
-        className="w-full bg-purple-600 hover:bg-purple-700 text-white py-4 text-lg shadow-lg shadow-purple-600/30"
+        data-testid="button-trustly-payment"
+        className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 text-lg shadow-lg shadow-blue-600/30"
         disabled={isLoading}
       >
         {isLoading ? (
@@ -622,7 +693,7 @@ function CellPayForm({
           </>
         ) : (
           <>
-            📱 Pay with CellPay - ${amount}
+            🏦 Pay with Trustly - ${amount}
           </>
         )}
       </Button>

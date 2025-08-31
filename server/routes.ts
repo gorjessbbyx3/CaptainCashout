@@ -15,10 +15,11 @@ const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SEC
   apiVersion: "2025-08-27.basil",
 }) : null;
 
-const cellPayConfig = {
-  apiUrl: process.env.CELLPAY_API_URL || 'https://api.cellpay.com',
-  memberId: process.env.CELLPAY_MEMBER_ID || '',
-  apiKey: process.env.CELLPAY_API_KEY || ''
+const trustlyConfig = {
+  apiUrl: process.env.TRUSTLY_API_URL || 'https://test.trustly.com/api/1',
+  username: process.env.TRUSTLY_USERNAME || '',
+  password: process.env.TRUSTLY_PASSWORD || '',
+  privateKey: process.env.TRUSTLY_PRIVATE_KEY || ''
 };
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -130,15 +131,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // CellPay payment processing
-  app.post("/api/cellpay-payment", async (req, res) => {
+  // Trustly payment processing
+  app.post("/api/trustly-payment", async (req, res) => {
     try {
-      const { amount, username, packageId, phoneNumber } = req.body;
+      const { amount, username, packageId, country = 'US', firstName, lastName, email } = req.body;
       
-      if (!amount || !username || !packageId || !phoneNumber) {
+      if (!amount || !username || !packageId || !country || !firstName || !lastName || !email) {
         return res.status(400).json({ 
           success: false, 
-          message: "Missing required fields: amount, username, packageId, phoneNumber" 
+          message: "Missing required fields: amount, username, packageId, country, firstName, lastName, email" 
         });
       }
 
@@ -158,21 +159,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         packageId,
         amount: amount.toString(),
         credits: creditPackage.credits,
-        paymentMethod: 'cellpay',
-        metadata: JSON.stringify({ phoneNumber, username })
+        paymentMethod: 'trustly',
+        metadata: JSON.stringify({ country, firstName, lastName, email, username })
       });
 
-      // Process CellPay payment (simplified integration)
-      // In production, you would integrate with actual CellPay API
-      const cellPayResponse = await processCellPayPayment({
+      // Process Trustly payment (simplified integration)
+      // In production, you would integrate with actual Trustly API
+      const trustlyResponse = await processTrustlyPayment({
         amount: parseFloat(amount),
-        phoneNumber,
+        currency: 'USD',
+        country,
+        firstName,
+        lastName,
+        email,
         transactionId: transaction.id,
         description: `Credit purchase - ${creditPackage.credits} credits`
       });
 
-      if (cellPayResponse.success) {
-        // Update transaction with CellPay transaction ID
+      if (trustlyResponse.success) {
+        // Update transaction with Trustly transaction ID
         await storage.updateTransactionStatus(transaction.id, 'completed');
         
         // Send email notification
@@ -181,26 +186,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
           amount: amount,
           credits: creditPackage.credits,
           transactionId: transaction.id,
-          paymentMethod: 'CellPay'
+          paymentMethod: 'Trustly'
         });
 
         res.json({ 
           success: true, 
           transactionId: transaction.id,
-          cellPayTransactionId: cellPayResponse.transactionId
+          trustlyTransactionId: trustlyResponse.transactionId,
+          redirectUrl: trustlyResponse.redirectUrl
         });
       } else {
         await storage.updateTransactionStatus(transaction.id, 'failed');
         res.status(400).json({ 
           success: false, 
-          message: cellPayResponse.error || "CellPay payment failed" 
+          message: trustlyResponse.error || "Trustly payment failed" 
         });
       }
     } catch (error: any) {
       res.status(500).json({ 
         success: false, 
-        message: "Error processing CellPay payment: " + error.message 
+        message: "Error processing Trustly payment: " + error.message 
       });
+    }
+  });
+
+  // Trustly webhook handler
+  app.post("/api/trustly-webhook", async (req, res) => {
+    try {
+      const notification = req.body;
+      
+      // In production, verify the notification signature here
+      console.log('Trustly webhook received:', notification);
+      
+      if (notification.method === 'credit' && notification.params) {
+        const { messageid, amount } = notification.params;
+        
+        // Find transaction by message ID
+        const transaction = await storage.getTransactionById(messageid);
+        if (transaction) {
+          // Update transaction status to completed
+          await storage.updateTransactionStatus(transaction.id, 'completed');
+          
+          // Send email notification
+          await sendPaymentNotificationEmail({
+            username: transaction.username,
+            amount: amount,
+            credits: transaction.credits,
+            transactionId: transaction.id,
+            paymentMethod: 'Trustly'
+          });
+        }
+      }
+      
+      // Respond with OK status
+      res.json({ status: 'OK' });
+    } catch (error: any) {
+      console.error('Trustly webhook error:', error.message);
+      res.status(400).json({ error: error.message });
     }
   });
 
@@ -256,48 +298,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
   return httpServer;
 }
 
-// CellPay payment processing function
-async function processCellPayPayment(paymentData: {
+// Trustly payment processing function
+async function processTrustlyPayment(paymentData: {
   amount: number;
-  phoneNumber: string;
+  currency: string;
+  country: string;
+  firstName: string;
+  lastName: string;
+  email: string;
   transactionId: string;
   description: string;
-}): Promise<{ success: boolean; transactionId?: string; error?: string }> {
+}): Promise<{ success: boolean; transactionId?: string; redirectUrl?: string; error?: string }> {
   try {
-    // This is a simplified CellPay integration
-    // In production, you would use the actual CellPay API
-    const cellPayPayload = {
-      memberId: cellPayConfig.memberId,
-      amount: paymentData.amount,
-      memberPrincipal: paymentData.phoneNumber,
-      invoice: paymentData.transactionId,
-      description: paymentData.description,
-      traceNumber: Date.now().toString()
+    // This is a simplified Trustly integration
+    // In production, you would use the actual Trustly API with proper authentication
+    const trustlyPayload = {
+      method: 'Deposit',
+      params: {
+        notificationurl: `${process.env.BASE_URL || 'http://localhost:5000'}/api/trustly-webhook`,
+        enduserid: paymentData.email,
+        messageid: paymentData.transactionId,
+        amount: paymentData.amount.toFixed(2),
+        currency: paymentData.currency,
+        country: paymentData.country,
+        firstname: paymentData.firstName,
+        lastname: paymentData.lastName,
+        email: paymentData.email,
+        successfulurlredirect: `${process.env.BASE_URL || 'http://localhost:5000'}?payment=success`,
+        errorurlredirect: `${process.env.BASE_URL || 'http://localhost:5000'}?payment=error`,
+        locale: 'en_US'
+      }
     };
 
-    // Simulate API call to CellPay
-    // Replace with actual CellPay API integration
-    const response = await fetch(`${cellPayConfig.apiUrl}/payment`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${cellPayConfig.apiKey}`
-      },
-      body: JSON.stringify(cellPayPayload)
-    });
-
-    if (response.ok) {
-      const result = await response.json();
-      return {
-        success: true,
-        transactionId: result.transactionId || paymentData.transactionId
-      };
-    } else {
-      return {
-        success: false,
-        error: 'CellPay payment failed'
-      };
-    }
+    // Simulate API call to Trustly
+    // Replace with actual Trustly API integration using their SDK
+    console.log('Trustly Payment Request:', trustlyPayload);
+    
+    // For demo purposes, return a successful response with a mock redirect URL
+    // In production, you would get a real redirect URL from Trustly
+    const mockRedirectUrl = `https://test.trustly.com/select-bank?token=mock_${paymentData.transactionId}`;
+    
+    return {
+      success: true,
+      transactionId: paymentData.transactionId,
+      redirectUrl: mockRedirectUrl
+    };
   } catch (error: any) {
     return {
       success: false,

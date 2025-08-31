@@ -5,7 +5,7 @@ import { z } from "zod";
 import { relations } from "drizzle-orm";
 
 export const paymentStatusEnum = pgEnum('payment_status', ['pending', 'processing', 'completed', 'failed', 'refunded']);
-export const paymentMethodEnum = pgEnum('payment_method', ['stripe_card', 'stripe_google_pay', 'stripe_apple_pay', 'cellpay']);
+export const paymentMethodEnum = pgEnum('payment_method', ['stripe_card', 'stripe_google_pay', 'stripe_apple_pay', 'trustly']);
 
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -37,7 +37,7 @@ export const transactions = pgTable("transactions", {
   paymentMethod: paymentMethodEnum("payment_method").notNull(),
   paymentStatus: paymentStatusEnum("payment_status").default('pending').notNull(),
   stripePaymentIntentId: text("stripe_payment_intent_id"),
-  cellpayTransactionId: text("cellpay_transaction_id"),
+  trustlyTransactionId: text("trustly_transaction_id"),
   metadata: text("metadata"), // JSON string for additional data
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -75,7 +75,7 @@ export const insertTransactionSchema = createInsertSchema(transactions).pick({
   credits: true,
   paymentMethod: true,
   stripePaymentIntentId: true,
-  cellpayTransactionId: true,
+  trustlyTransactionId: true,
   metadata: true,
 });
 
