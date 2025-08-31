@@ -225,7 +225,7 @@ export default function PaymentPage() {
             <div 
               className="absolute inset-0 bg-cover bg-center"
               style={{
-                backgroundImage: `url('/attached_assets/IMG_4688_1756681796461.webp')`,
+                backgroundImage: `url('/assets/hero-bg.webp')`,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
                 filter: 'brightness(0.4) saturate(1.1)'
