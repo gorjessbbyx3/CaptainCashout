@@ -293,14 +293,16 @@ export default function PaymentPage() {
                       : 'shadow-lg hover:shadow-xl border border-gray-200 hover:border-gray-300'
                   }`}>
                     {/* Gradient Background */}
-                    <div className={`absolute inset-0 opacity-0 transition-opacity duration-500 ${
-                      selectedPackage?.id === pkg.id ? 'opacity-100' : 'group-hover:opacity-100'
+                    <div className={`absolute inset-0 transition-opacity duration-500 ${
+                      selectedPackage?.id === pkg.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                     }`}>
                       <div className={`absolute inset-0 ${
-                        index === 0 ? 'bg-gradient-to-br from-blue-50 to-indigo-100' :
-                        index === 1 ? 'bg-gradient-to-br from-purple-50 to-pink-100' :
-                        index === 2 ? 'bg-gradient-to-br from-green-50 to-emerald-100' :
-                        'bg-gradient-to-br from-orange-50 to-red-100'
+                        selectedPackage?.id === pkg.id 
+                          ? 'bg-gradient-to-br from-black to-gray-800'
+                          : index === 0 ? 'bg-gradient-to-br from-blue-50 to-indigo-100' :
+                            index === 1 ? 'bg-gradient-to-br from-purple-50 to-pink-100' :
+                            index === 2 ? 'bg-gradient-to-br from-green-50 to-emerald-100' :
+                            'bg-gradient-to-br from-orange-50 to-red-100'
                       }`} />
                     </div>
                     
@@ -335,35 +337,59 @@ export default function PaymentPage() {
                       </div>
 
                       {/* Price */}
-                      <div className="text-5xl font-bold text-black mb-2 transition-all duration-300 group-hover:scale-110">
+                      <div className={`text-5xl font-bold mb-2 transition-all duration-300 group-hover:scale-110 ${
+                        selectedPackage?.id === pkg.id
+                          ? 'text-white'
+                          : 'text-gray-900 group-hover:text-gray-800'
+                      }`}>
                         ${pkg.price}
                       </div>
                       
                       {/* Package Name */}
-                      <div className="text-lg font-medium text-gray-600 mb-4">
+                      <div className={`text-lg font-medium mb-4 ${
+                        selectedPackage?.id === pkg.id
+                          ? 'text-gray-100'
+                          : 'text-gray-700 group-hover:text-gray-600'
+                      }`}>
                         {pkg.name}
                       </div>
 
                       {/* Bonus Badge */}
                       {pkg.bonusPercentage > 0 && (
-                        <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 mb-4">
-                          <span className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></span>
+                        <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-500 text-white mb-4 shadow-lg">
+                          <span className="w-2 h-2 bg-green-200 rounded-full mr-2 animate-pulse"></span>
                           +{pkg.bonusPercentage}% Bonus
                         </div>
                       )}
 
                       {/* Features */}
-                      <div className="space-y-2 text-sm text-gray-500">
+                      <div className={`space-y-2 text-sm ${
+                        selectedPackage?.id === pkg.id
+                          ? 'text-gray-200'
+                          : 'text-gray-600 group-hover:text-gray-500'
+                      }`}>
                         <div className="flex items-center justify-center">
-                          <span className="w-1 h-1 bg-gray-400 rounded-full mr-2"></span>
+                          <span className={`w-1 h-1 rounded-full mr-2 ${
+                            selectedPackage?.id === pkg.id
+                              ? 'bg-gray-300'
+                              : 'bg-gray-500 group-hover:bg-gray-400'
+                          }`}></span>
                           Instant Delivery
                         </div>
                         <div className="flex items-center justify-center">
-                          <span className="w-1 h-1 bg-gray-400 rounded-full mr-2"></span>
+                          <span className={`w-1 h-1 rounded-full mr-2 ${
+                            selectedPackage?.id === pkg.id
+                              ? 'bg-gray-300'
+                              : 'bg-gray-500 group-hover:bg-gray-400'
+                          }`}></span>
                           Secure Payment
                         </div>
                         <div className="flex items-center justify-center">
-                          <span className="w-1 h-1 bg-gray-400 rounded-full mr-2"></span>
+                          <span className={`w-1 h-1 rounded-full mr-2 ${
+                            selectedPackage?.id === pkg.id
+                              ? 'bg-gray-300'
+                              : 'bg-gray-500 group-hover:bg-gray-400'
+                          }`}></span>
                           24/7 Support
                         </div>
                       </div>
@@ -371,8 +397,8 @@ export default function PaymentPage() {
                       {/* Selection Indicator */}
                       <div className={`mt-6 w-full h-1 rounded-full transition-all duration-300 ${
                         selectedPackage?.id === pkg.id
-                          ? 'bg-black'
-                          : 'bg-gray-200 group-hover:bg-gray-300'
+                          ? 'bg-white'
+                          : 'bg-gray-300 group-hover:bg-gray-400'
                       }`} />
                     </CardContent>
 
