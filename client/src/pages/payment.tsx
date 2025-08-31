@@ -250,7 +250,7 @@ export default function PaymentPage() {
           {/* Minimal Stats */}
           <div className="grid grid-cols-3 gap-12 text-white">
             <div className="text-center">
-              <div className="text-3xl font-light mb-2">< 1s</div>
+              <div className="text-3xl font-light mb-2">&lt; 1s</div>
               <div className="text-sm font-light opacity-80">Processing Time</div>
             </div>
             <div className="text-center">
