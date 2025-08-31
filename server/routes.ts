@@ -186,7 +186,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           amount: amount,
           credits: creditPackage.credits,
           transactionId: transaction.id,
-          paymentMethod: 'Trustly'
+          paymentMethod: 'Trustly',
+          packageName: creditPackage.name
         });
 
         res.json({ 

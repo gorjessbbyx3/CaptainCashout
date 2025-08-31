@@ -223,13 +223,6 @@ export default function PaymentPage() {
         
         {/* Content */}
         <div className="relative z-10 text-center px-6 max-w-6xl mx-auto">
-          <h1 className="text-6xl md:text-8xl font-light text-white mb-8 tracking-tight">
-            ALL PLATFORMS
-          </h1>
-          <h2 className="text-3xl md:text-5xl font-light text-white mb-12 tracking-wide">
-            Buy Credits Now
-          </h2>
-          
           {/* Tesla-style CTA */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16">
             <Button 
@@ -322,12 +315,6 @@ export default function PaymentPage() {
                     <CardContent className="p-8 text-center">
                       <div className="text-4xl font-light text-black mb-4">
                         ${pkg.price}
-                      </div>
-                      <div className="text-lg text-gray-600 mb-2">
-                        {pkg.credits.toLocaleString()}
-                      </div>
-                      <div className="text-sm text-gray-500 font-light">
-                        Credits
                       </div>
                       {pkg.bonusPercentage > 0 && (
                         <div className="mt-4 text-sm font-medium text-green-600">
