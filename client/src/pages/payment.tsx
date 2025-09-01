@@ -14,7 +14,7 @@ import { loadStripe } from "@stripe/stripe-js";
 import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import gamingImage from "@assets/IMG_4688_1756679627792.webp";
 
-const stripePromise = import.meta.env.VITE_STRIPE_PUBLIC_KEY 
+const stripePromise = import.meta.env.VITE_STRIPE_PUBLIC_KEY
   ? loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY)
   : null;
 
@@ -145,7 +145,7 @@ export default function PaymentPage() {
     setPaymentMethod(method);
     setIsPaymentReady(false);
     setClientSecret("");
-    
+
     if (method === 'stripe' && amount && username) {
       createPaymentIntentMutation.mutate({
         amount: amount
@@ -158,61 +158,69 @@ export default function PaymentPage() {
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
           {/* Hero Section */}
-          <div className="relative text-center mb-12 overflow-hidden rounded-2xl">
-            {/* Background Image */}
-            <div 
-              className="absolute inset-0 bg-cover bg-center opacity-20"
+          <div className="relative text-center mb-16 overflow-hidden rounded-3xl fade-in">
+            {/* Background Image with Enhanced Styling */}
+            <div
+              className="absolute inset-0 bg-cover bg-center opacity-15"
               style={{
                 backgroundImage: `url('/attached_assets/IMG_4688_1756680598898.webp')`,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
-                filter: 'brightness(0.3) saturate(1.2)'
+                filter: 'brightness(0.4) saturate(1.5) contrast(1.2)'
               }}
             />
-            {/* Gradient Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent" />
-            
+            {/* Enhanced Gradient Overlay */}
+            <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-blue-950/90 to-slate-900/95" />
+
+            {/* Animated Background Elements */}
+            <div className="absolute inset-0 overflow-hidden">
+              <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl animate-pulse"></div>
+              <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl pulse-slow"></div>
+            </div>
+
             {/* Content */}
-            <div className="relative z-10 py-12 px-6">
+            <div className="relative z-10 py-20 px-6">
               {/* Captain Cashout Brand */}
-              <div className="flex items-center justify-center space-x-3 mb-6">
-                <div className="w-16 h-16 bg-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-600/30">
-                  <span className="text-3xl">💰</span>
+              <div className="flex items-center justify-center space-x-4 mb-8 scale-in">
+                <div className="w-20 h-20 premium-gradient rounded-2xl flex items-center justify-center shadow-2xl glow-effect float-animation">
+                  <span className="text-4xl">💰</span>
                 </div>
                 <div className="text-left">
-                  <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent">
-                    Captain Cashout
+                  <h1 className="text-5xl md:text-6xl font-bold heading-font gold-gradient bg-clip-text text-transparent text-shadow">
+                    Captain Cash
                   </h1>
-                  <p className="text-lg text-slate-300">Secure Payment Portal</p>
+                  <p className="text-xl text-slate-300 font-medium">Premium Payment Portal</p>
                 </div>
               </div>
-              
-              <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                <span className="bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent">
-                  Power Up
-                </span>{" "}
-                <span className="text-white">Your Account</span>
-              </h2>
-              <p className="text-xl text-slate-300 mb-6">Quick, secure, and hassle-free credit top-ups</p>
-              <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-slate-400">
-                <div className="flex items-center space-x-2">
-                  <span className="text-yellow-400">⚡</span>
+
+              <div className="max-w-4xl mx-auto">
+                <h2 className="text-4xl md:text-5xl font-bold mb-6 heading-font">
+                  <span className="gold-gradient bg-clip-text text-transparent">
+                    Power Up
+                  </span>{" "}
+                  <span className="text-white">Your Account</span>
+                </h2>
+                <p className="text-2xl text-slate-300 mb-8 font-light leading-relaxed">Experience lightning-fast, bank-grade secure credit top-ups</p>
+              </div>
+              <div className="flex flex-wrap items-center justify-center gap-6 text-sm">
+                <div className="flex items-center space-x-2 text-slate-300">
+                  <span className="text-yellow-400/80">⚡</span>
                   <span>Instant Processing</span>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <span className="text-purple-400">👥</span>
+                <div className="flex items-center space-x-2 text-slate-300">
+                  <span className="text-purple-400/80">👥</span>
                   <span>2M+ Active Players</span>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <span className="text-green-400">🏆</span>
+                <div className="flex items-center space-x-2 text-slate-300">
+                  <span className="text-green-400/80">🏆</span>
                   <span>99.9% Uptime</span>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <span className="text-green-400">🛡️</span>
+                <div className="flex items-center space-x-2 text-slate-300">
+                  <span className="text-blue-400/80">🛡️</span>
                   <span>SSL Secured</span>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <span className="text-green-400">🔒</span>
+                <div className="flex items-center space-x-2 text-slate-300">
+                  <span className="text-red-400/80">🔒</span>
                   <span>PCI Compliant</span>
                 </div>
               </div>
@@ -276,9 +284,9 @@ export default function PaymentPage() {
 
                 {/* Gaming Image */}
                 <div className="mb-6 rounded-lg overflow-hidden bg-slate-900/50">
-                  <img 
-                    src={gamingImage} 
-                    alt="Popular gaming platforms" 
+                  <img
+                    src={gamingImage}
+                    alt="Popular gaming platforms"
                     className="w-full object-contain opacity-95"
                   />
                 </div>
@@ -335,7 +343,7 @@ export default function PaymentPage() {
                         <span className="text-blue-400 font-bold text-xl">${amount}</span>
                       </div>
                     </div>
-                    
+
                     {!username && (
                       <div className="bg-yellow-900/20 border border-yellow-700/50 rounded-lg p-4">
                         <div className="flex items-center space-x-2">
@@ -344,15 +352,15 @@ export default function PaymentPage() {
                         </div>
                       </div>
                     )}
-                    
+
                     {username && (
-                      <Button 
+                      <Button
                         data-testid="button-continue"
                         className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-3"
                         onClick={() => {
                           // Scroll to payment methods section
-                          document.querySelector('[data-testid="payment-methods-card"]')?.scrollIntoView({ 
-                            behavior: 'smooth' 
+                          document.querySelector('[data-testid="payment-methods-card"]')?.scrollIntoView({
+                            behavior: 'smooth'
                           });
                         }}
                       >
@@ -471,33 +479,33 @@ export default function PaymentPage() {
 
           {/* Trust Indicators */}
           <div className="mt-8 grid md:grid-cols-3 gap-6">
-            <Card className="bg-slate-800 border-slate-700 text-center">
-              <CardContent className="p-6">
-                <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <span className="text-green-400 text-2xl">🛡️</span>
+            <Card className="premium-card hover:scale-105 transition-all duration-300 text-center group">
+              <CardContent className="p-8">
+                <div className="w-20 h-20 bg-gradient-to-br from-green-500/20 to-emerald-500/20 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300 border border-green-500/20">
+                  <span className="text-green-400 text-3xl">🔒</span>
                 </div>
-                <h4 className="font-semibold text-white mb-2">Bank-Level Security</h4>
-                <p className="text-sm text-slate-400">256-bit SSL encryption protects all transactions</p>
+                <h4 className="font-bold text-white mb-3 text-lg heading-font">Bank-Grade Security</h4>
+                <p className="text-slate-300 leading-relaxed">Military-grade encryption and SSL protection safeguard every transaction</p>
               </CardContent>
             </Card>
 
-            <Card className="bg-slate-800 border-slate-700 text-center">
-              <CardContent className="p-6">
-                <div className="w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <span className="text-blue-400 text-2xl">⚡</span>
+            <Card className="premium-card hover:scale-105 transition-all duration-300 text-center group">
+              <CardContent className="p-8">
+                <div className="w-20 h-20 bg-gradient-to-br from-blue-500/20 to-cyan-500/20 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300 border border-blue-500/20">
+                  <span className="text-blue-400 text-3xl">⚡</span>
                 </div>
-                <h4 className="font-semibold text-white mb-2">Instant Processing</h4>
-                <p className="text-sm text-slate-400">Credits added to your account immediately</p>
+                <h4 className="font-bold text-white mb-3 text-lg heading-font">Lightning Fast</h4>
+                <p className="text-slate-300 leading-relaxed">Credits appear in your account within seconds of payment confirmation</p>
               </CardContent>
             </Card>
 
-            <Card className="bg-slate-800 border-slate-700 text-center">
-              <CardContent className="p-6">
-                <div className="w-16 h-16 bg-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <span className="text-purple-400 text-2xl">🎧</span>
+            <Card className="premium-card hover:scale-105 transition-all duration-300 text-center group">
+              <CardContent className="p-8">
+                <div className="w-20 h-20 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300 border border-purple-500/20">
+                  <span className="text-purple-400 text-3xl">🎧</span>
                 </div>
-                <h4 className="font-semibold text-white mb-2">24/7 Support</h4>
-                <p className="text-sm text-slate-400">Follow @captaincashout on Instagram for help</p>
+                <h4 className="font-bold text-white mb-3 text-lg heading-font">Elite Support</h4>
+                <p className="text-slate-300 leading-relaxed">Dedicated support team available 24/7 via @captaincashout on Instagram</p>
               </CardContent>
             </Card>
           </div>
@@ -508,16 +516,16 @@ export default function PaymentPage() {
 }
 
 // Stripe Payment Form Component
-function StripePaymentForm({ 
-  clientSecret, 
-  isReady, 
-  amount, 
-  onSuccess 
-}: { 
-  clientSecret: string; 
-  isReady: boolean; 
-  amount: string; 
-  onSuccess: () => void; 
+function StripePaymentForm({
+  clientSecret,
+  isReady,
+  amount,
+  onSuccess
+}: {
+  clientSecret: string;
+  isReady: boolean;
+  amount: string;
+  onSuccess: () => void;
 }) {
   if (!stripePromise) {
     return (
@@ -539,9 +547,9 @@ function StripePaymentForm({
   }
 
   return (
-    <Elements 
-      stripe={stripePromise} 
-      options={{ 
+    <Elements
+      stripe={stripePromise}
+      options={{
         clientSecret,
         appearance: {
           theme: 'night',
@@ -560,12 +568,12 @@ function StripePaymentForm({
   );
 }
 
-function StripeCheckoutForm({ 
-  amount, 
-  onSuccess 
-}: { 
-  amount: string; 
-  onSuccess: () => void; 
+function StripeCheckoutForm({
+  amount,
+  onSuccess
+}: {
+  amount: string;
+  onSuccess: () => void;
 }) {
   const stripe = useStripe();
   const elements = useElements();
@@ -602,7 +610,7 @@ function StripeCheckoutForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <PaymentElement 
+      <PaymentElement
         options={{
           layout: {
             type: 'tabs',
@@ -615,7 +623,7 @@ function StripeCheckoutForm({
           }
         }}
       />
-      
+
       <div className="bg-green-900/20 border border-green-700/50 rounded-lg p-3">
         <div className="flex items-center space-x-2 text-sm">
           <span className="text-green-400">🛡️</span>
@@ -662,14 +670,14 @@ function StripeCheckoutForm({
 }
 
 // Trustly Form Component
-function TrustlyForm({ 
-  onSubmit, 
-  isLoading, 
-  amount 
-}: { 
-  onSubmit: (data: TrustlyForm) => void; 
-  isLoading: boolean; 
-  amount: string; 
+function TrustlyForm({
+  onSubmit,
+  isLoading,
+  amount
+}: {
+  onSubmit: (data: TrustlyForm) => void;
+  isLoading: boolean;
+  amount: string;
 }) {
   const trustlyForm = useForm<TrustlyForm>({
     resolver: zodResolver(trustlySchema),
@@ -693,7 +701,7 @@ function TrustlyForm({
             </p>
           )}
         </div>
-        
+
         <div>
           <Label htmlFor="lastName" className="text-white">Last Name</Label>
           <Input
@@ -710,7 +718,7 @@ function TrustlyForm({
           )}
         </div>
       </div>
-      
+
       <div>
         <Label htmlFor="email" className="text-white">Email Address</Label>
         <Input
@@ -727,7 +735,7 @@ function TrustlyForm({
           </p>
         )}
       </div>
-      
+
       <div>
         <Label htmlFor="country" className="text-white">Country</Label>
         <select
