@@ -155,35 +155,6 @@ export default function PaymentPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-900">
-      {/* Header */}
-      <header className="bg-slate-900/80 backdrop-blur-lg border-b border-slate-700 sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-600/30">
-                <span className="text-xl">💰</span>
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent">
-                  Captain Cashout
-                </h1>
-                <p className="text-sm text-slate-400">Secure Payment Portal</p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2 text-sm text-slate-400">
-                <span className="text-green-400">🛡️</span>
-                <span>SSL Secured</span>
-              </div>
-              <div className="flex items-center space-x-2 text-sm text-slate-400">
-                <span className="text-green-400">🔒</span>
-                <span>PCI Compliant</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
-
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
           {/* Hero Section */}
@@ -203,14 +174,27 @@ export default function PaymentPage() {
             
             {/* Content */}
             <div className="relative z-10 py-12 px-6">
-              <h2 className="text-4xl md:text-5xl font-bold mb-4">
+              {/* Captain Cashout Brand */}
+              <div className="flex items-center justify-center space-x-3 mb-6">
+                <div className="w-16 h-16 bg-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-600/30">
+                  <span className="text-3xl">💰</span>
+                </div>
+                <div className="text-left">
+                  <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent">
+                    Captain Cashout
+                  </h1>
+                  <p className="text-lg text-slate-300">Secure Payment Portal</p>
+                </div>
+              </div>
+              
+              <h2 className="text-3xl md:text-4xl font-bold mb-4">
                 <span className="bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent">
                   Power Up
                 </span>{" "}
                 <span className="text-white">Your Account</span>
               </h2>
               <p className="text-xl text-slate-300 mb-6">Quick, secure, and hassle-free credit top-ups</p>
-              <div className="flex items-center justify-center space-x-6 text-sm text-slate-400">
+              <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-slate-400">
                 <div className="flex items-center space-x-2">
                   <span className="text-yellow-400">⚡</span>
                   <span>Instant Processing</span>
@@ -222,6 +206,14 @@ export default function PaymentPage() {
                 <div className="flex items-center space-x-2">
                   <span className="text-green-400">🏆</span>
                   <span>99.9% Uptime</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <span className="text-green-400">🛡️</span>
+                  <span>SSL Secured</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <span className="text-green-400">🔒</span>
+                  <span>PCI Compliant</span>
                 </div>
               </div>
             </div>
