@@ -200,7 +200,7 @@ export default function PaymentPage() {
                   <Zap className="w-12 h-12 text-white" />
                 </div>
                 <div className="text-center">
-                  <h1 className="text-6xl md:text-8xl font-black mb-8 bg-gradient-to-r from-cyan-300 via-blue-400 to-purple-500 bg-clip-text text-transparent leading-tight flex items-center justify-center gap-4 tracking-wider uppercase font-mono shimmer glow-effect transform hover:scale-105 transition-all duration-300 drop-shadow-2xl">
+                  <h1 className="text-6xl md:text-8xl font-black mb-8 bg-gradient-to-r from-cyan-300 via-blue-400 to-purple-500 bg-clip-text text-transparent leading-tight flex items-center justify-center gap-4 tracking-wider uppercase font-mono transform hover:scale-105 transition-all duration-300 drop-shadow-2xl" style={{WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text'}}>
                     Captain Cashout <Zap className="w-20 h-20 text-cyan-400 animate-pulse" />
                   </h1>
                   <p className="text-xl md:text-2xl text-slate-300 mb-12 max-w-3xl mx-auto leading-relaxed flex items-center justify-center gap-3">
