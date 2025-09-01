@@ -13,6 +13,20 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import gamingImage from "@assets/IMG_4688_1756679627792.webp";
+import {
+  CreditCard,
+  Building2,
+  Smartphone,
+  Zap,
+  Shield,
+  Clock,
+  Check,
+  Star,
+  ArrowRight,
+  Users,
+  Globe,
+  Headphones
+} from 'lucide-react';
 
 const stripePromise = import.meta.env.VITE_STRIPE_PUBLIC_KEY
   ? loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY)
@@ -186,42 +200,38 @@ export default function PaymentPage() {
                   <span className="text-4xl">💰</span>
                 </div>
                 <div className="text-left">
-                  <h1 className="text-5xl md:text-6xl font-bold heading-font gold-gradient bg-clip-text text-transparent text-shadow">
-                    Captain Cash
+                  <h1 className="text-5xl md:text-7xl font-bold mb-8 bg-gradient-to-r from-white via-blue-100 to-purple-200 bg-clip-text text-transparent leading-tight flex items-center justify-center gap-4">
+                    Streamline Your Payments <Zap className="w-16 h-16 text-blue-400" />
                   </h1>
-                  <p className="text-xl text-slate-300 font-medium">Premium Payment Portal</p>
+                  <p className="text-xl md:text-2xl text-slate-300 mb-12 max-w-3xl mx-auto leading-relaxed flex items-center justify-center gap-3">
+                    Experience lightning-fast, secure transactions with our cutting-edge payment platform
+                    <ArrowRight className="w-6 h-6 text-blue-400" />
+                  </p>
                 </div>
               </div>
 
-              <div className="max-w-4xl mx-auto">
-                <h2 className="text-4xl md:text-5xl font-bold mb-6 heading-font">
-                  <span className="gold-gradient bg-clip-text text-transparent">
-                    Power Up
-                  </span>{" "}
-                  <span className="text-white">Your Account</span>
-                </h2>
-                <p className="text-2xl text-slate-300 mb-8 font-light leading-relaxed">Experience lightning-fast, bank-grade secure credit top-ups</p>
-              </div>
-              <div className="flex flex-wrap items-center justify-center gap-6 text-sm">
-                <div className="flex items-center space-x-2 text-slate-300">
-                  <span className="text-yellow-400/80">⚡</span>
-                  <span>Instant Processing</span>
+              {/* Feature Cards */}
+              <div className="grid md:grid-cols-3 gap-8 mb-16">
+                <div className="bg-white/5 backdrop-blur-sm p-8 rounded-2xl border border-white/10 hover:bg-white/10 transition-all duration-300 hover:scale-105">
+                  <div className="mb-4">
+                    <Zap className="w-12 h-12 text-blue-400" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-white mb-3">Lightning Fast</h3>
+                  <p className="text-slate-300">Process payments in milliseconds with our optimized infrastructure</p>
                 </div>
-                <div className="flex items-center space-x-2 text-slate-300">
-                  <span className="text-purple-400/80">👥</span>
-                  <span>2M+ Active Players</span>
+                <div className="bg-white/5 backdrop-blur-sm p-8 rounded-2xl border border-white/10 hover:bg-white/10 transition-all duration-300 hover:scale-105">
+                  <div className="mb-4">
+                    <Shield className="w-12 h-12 text-green-400" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-white mb-3">Bank-Grade Security</h3>
+                  <p className="text-slate-300">Your transactions are protected with enterprise-level encryption</p>
                 </div>
-                <div className="flex items-center space-x-2 text-slate-300">
-                  <span className="text-green-400/80">🏆</span>
-                  <span>99.9% Uptime</span>
-                </div>
-                <div className="flex items-center space-x-2 text-slate-300">
-                  <span className="text-blue-400/80">🛡️</span>
-                  <span>SSL Secured</span>
-                </div>
-                <div className="flex items-center space-x-2 text-slate-300">
-                  <span className="text-red-400/80">🔒</span>
-                  <span>PCI Compliant</span>
+                <div className="bg-white/5 backdrop-blur-sm p-8 rounded-2xl border border-white/10 hover:bg-white/10 transition-all duration-300 hover:scale-105">
+                  <div className="mb-4">
+                    <Globe className="w-12 h-12 text-purple-400" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-white mb-3">Global Reach</h3>
+                  <p className="text-slate-300">Accept payments from customers worldwide with multi-currency support</p>
                 </div>
               </div>
             </div>
@@ -233,7 +243,7 @@ export default function PaymentPage() {
               <CardContent className="p-6">
                 <div className="flex items-center space-x-3 mb-6">
                   <div className="w-10 h-10 bg-blue-600/20 rounded-lg flex items-center justify-center">
-                    <span className="text-blue-400">👤</span>
+                    <Users className="w-6 h-6 text-blue-400" />
                   </div>
                   <div>
                     <h3 className="text-xl font-semibold text-white">Your Username</h3>
@@ -258,7 +268,7 @@ export default function PaymentPage() {
                 {username && (
                   <div className="mt-6 p-4 bg-blue-900/20 border border-blue-700/50 rounded-lg" data-testid="username-entered">
                     <div className="flex items-center space-x-3">
-                      <span className="text-blue-400">✨</span>
+                      <Check className="w-6 h-6 text-blue-400" />
                       <div>
                         <p className="font-medium text-blue-400">Ready for Payment</p>
                         <p className="text-sm text-slate-300">Username: {username}</p>
@@ -274,7 +284,7 @@ export default function PaymentPage() {
               <CardContent className="p-6">
                 <div className="flex items-center space-x-3 mb-6">
                   <div className="w-10 h-10 bg-yellow-500/20 rounded-lg flex items-center justify-center">
-                    <span className="text-yellow-400">💰</span>
+                    <Star className="w-6 h-6 text-yellow-400" />
                   </div>
                   <div>
                     <h3 className="text-xl font-semibold text-white">Reload Amount</h3>
@@ -347,7 +357,7 @@ export default function PaymentPage() {
                     {!username && (
                       <div className="bg-yellow-900/20 border border-yellow-700/50 rounded-lg p-4">
                         <div className="flex items-center space-x-2">
-                          <span className="text-yellow-400">👆</span>
+                          <Star className="w-5 h-5 text-yellow-400" />
                           <p className="text-yellow-400 text-sm">Enter your username above to continue</p>
                         </div>
                       </div>
@@ -379,7 +389,7 @@ export default function PaymentPage() {
               <CardContent className="p-6">
                 <div className="flex items-center space-x-3 mb-6">
                   <div className="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
-                    <span className="text-green-400">💳</span>
+                    <CreditCard className="w-6 h-6 text-green-400" />
                   </div>
                   <div>
                     <h3 className="text-xl font-semibold text-white">Payment Method</h3>
@@ -402,7 +412,7 @@ export default function PaymentPage() {
                       onClick={() => handlePaymentMethodChange('stripe')}
                     >
                       <div className="flex items-center space-x-3">
-                        <span className="text-blue-400 text-xl">💳</span>
+                        <CreditCard className="w-6 h-6 text-blue-400" />
                         <div>
                           <p className="font-medium text-white">Cards & Digital Wallets</p>
                           <p className="text-sm text-slate-400">Visa, Mastercard, Apple Pay, Google Pay</p>
@@ -420,7 +430,7 @@ export default function PaymentPage() {
                       onClick={() => handlePaymentMethodChange('trustly')}
                     >
                       <div className="flex items-center space-x-3">
-                        <span className="text-blue-400 text-xl">🏦</span>
+                        <Building2 className="w-6 h-6 text-blue-400" />
                         <div>
                           <p className="font-medium text-white">Trustly</p>
                           <p className="text-sm text-slate-400">Secure bank transfers</p>
@@ -482,7 +492,7 @@ export default function PaymentPage() {
             <Card className="premium-card hover:scale-105 transition-all duration-300 text-center group">
               <CardContent className="p-8">
                 <div className="w-20 h-20 bg-gradient-to-br from-green-500/20 to-emerald-500/20 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300 border border-green-500/20">
-                  <span className="text-green-400 text-3xl">🔒</span>
+                  <Shield className="w-12 h-12 text-green-400" />
                 </div>
                 <h4 className="font-bold text-white mb-3 text-lg heading-font">Bank-Grade Security</h4>
                 <p className="text-slate-300 leading-relaxed">Military-grade encryption and SSL protection safeguard every transaction</p>
@@ -492,7 +502,7 @@ export default function PaymentPage() {
             <Card className="premium-card hover:scale-105 transition-all duration-300 text-center group">
               <CardContent className="p-8">
                 <div className="w-20 h-20 bg-gradient-to-br from-blue-500/20 to-cyan-500/20 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300 border border-blue-500/20">
-                  <span className="text-blue-400 text-3xl">⚡</span>
+                  <Zap className="w-12 h-12 text-blue-400" />
                 </div>
                 <h4 className="font-bold text-white mb-3 text-lg heading-font">Lightning Fast</h4>
                 <p className="text-slate-300 leading-relaxed">Credits appear in your account within seconds of payment confirmation</p>
@@ -502,7 +512,7 @@ export default function PaymentPage() {
             <Card className="premium-card hover:scale-105 transition-all duration-300 text-center group">
               <CardContent className="p-8">
                 <div className="w-20 h-20 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300 border border-purple-500/20">
-                  <span className="text-purple-400 text-3xl">🎧</span>
+                  <Headphones className="w-12 h-12 text-purple-400" />
                 </div>
                 <h4 className="font-bold text-white mb-3 text-lg heading-font">Elite Support</h4>
                 <p className="text-slate-300 leading-relaxed">Dedicated support team available 24/7 via @captaincashout on Instagram</p>
@@ -626,7 +636,7 @@ function StripeCheckoutForm({
 
       <div className="bg-green-900/20 border border-green-700/50 rounded-lg p-3">
         <div className="flex items-center space-x-2 text-sm">
-          <span className="text-green-400">🛡️</span>
+          <Shield className="w-5 h-5 text-green-400" />
           <span className="text-green-400">Your payment information is encrypted and secure</span>
         </div>
       </div>
@@ -634,15 +644,15 @@ function StripeCheckoutForm({
       <div className="bg-blue-900/20 border border-blue-700/50 rounded-lg p-3">
         <div className="text-xs text-blue-300 space-y-1">
           <p className="flex items-center space-x-2">
-            <span>💳</span>
+            <CreditCard className="w-4 h-4" />
             <span>Credit/Debit Cards</span>
           </p>
           <p className="flex items-center space-x-2">
-            <span>📱</span>
+            <Smartphone className="w-4 h-4" />
             <span>Apple Pay (iOS devices)</span>
           </p>
           <p className="flex items-center space-x-2">
-            <span>🤖</span>
+            <Smartphone className="w-4 h-4" />
             <span>Google Pay (Android devices)</span>
           </p>
         </div>
@@ -764,7 +774,7 @@ function TrustlyForm({
 
       <div className="bg-blue-900/20 border border-blue-700/50 rounded-lg p-3">
         <div className="flex items-center space-x-2 text-sm">
-          <span className="text-blue-400">🏦</span>
+          <Building2 className="w-5 h-5 text-blue-400" />
           <span className="text-blue-400">You'll be redirected to your bank to complete the transfer</span>
         </div>
       </div>
