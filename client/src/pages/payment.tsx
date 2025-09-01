@@ -328,11 +328,37 @@ export default function PaymentPage() {
                 </div>
 
                 {amount && (
-                  <div className="bg-blue-900/20 border border-blue-700/50 rounded-lg p-4" data-testid="selected-amount">
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium text-white">Reload Amount:</span>
-                      <span className="text-blue-400 font-bold text-xl">${amount}</span>
+                  <div className="space-y-4">
+                    <div className="bg-blue-900/20 border border-blue-700/50 rounded-lg p-4" data-testid="selected-amount">
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium text-white">Reload Amount:</span>
+                        <span className="text-blue-400 font-bold text-xl">${amount}</span>
+                      </div>
                     </div>
+                    
+                    {!username && (
+                      <div className="bg-yellow-900/20 border border-yellow-700/50 rounded-lg p-4">
+                        <div className="flex items-center space-x-2">
+                          <span className="text-yellow-400">👆</span>
+                          <p className="text-yellow-400 text-sm">Enter your username above to continue</p>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {username && (
+                      <Button 
+                        data-testid="button-continue"
+                        className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-3"
+                        onClick={() => {
+                          // Scroll to payment methods section
+                          document.querySelector('[data-testid="payment-methods-card"]')?.scrollIntoView({ 
+                            behavior: 'smooth' 
+                          });
+                        }}
+                      >
+                        Continue to Payment →
+                      </Button>
+                    )}
                   </div>
                 )}
               </CardContent>
