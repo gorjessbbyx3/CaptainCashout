@@ -287,7 +287,7 @@ export default function PaymentPage() {
                   <img 
                     src={gamingImage} 
                     alt="Popular gaming platforms" 
-                    className="w-full h-24 object-cover opacity-80"
+                    className="w-full h-48 object-contain opacity-90 bg-slate-900/50"
                   />
                 </div>
 
