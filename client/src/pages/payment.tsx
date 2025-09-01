@@ -262,7 +262,6 @@ export default function PaymentPage() {
           )}
         </div>
       </section>
-        <
 
       {/* Payment Section - Tesla Minimal */}
       {isReadyForPayment && (
