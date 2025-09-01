@@ -222,7 +222,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const { messageid, amount } = notification.params;
         
         // Find transaction by message ID
-        const transaction = await storage.getTransactionById(messageid);
+        const transaction = await storage.getTransaction(messageid);
         if (transaction) {
           // Update transaction status to completed
           await storage.updateTransactionStatus(transaction.id, 'completed');

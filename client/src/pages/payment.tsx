@@ -355,8 +355,8 @@ export default function PaymentPage() {
                       <div className="flex items-center space-x-3">
                         <span className="text-blue-400 text-xl">💳</span>
                         <div>
-                          <p className="font-medium text-white">Credit/Debit Card</p>
-                          <p className="text-sm text-slate-400">Visa, Mastercard, American Express</p>
+                          <p className="font-medium text-white">Cards & Digital Wallets</p>
+                          <p className="text-sm text-slate-400">Visa, Mastercard, Apple Pay, Google Pay</p>
                         </div>
                       </div>
                     </div>
@@ -500,7 +500,22 @@ function StripePaymentForm({
   }
 
   return (
-    <Elements stripe={stripePromise} options={{ clientSecret }}>
+    <Elements 
+      stripe={stripePromise} 
+      options={{ 
+        clientSecret,
+        appearance: {
+          theme: 'night',
+          variables: {
+            colorPrimary: '#3b82f6',
+            colorBackground: '#1e293b',
+            colorText: '#ffffff',
+            colorDanger: '#ef4444',
+            borderRadius: '8px',
+          }
+        }
+      }}
+    >
       <StripeCheckoutForm amount={amount} credits={credits} onSuccess={onSuccess} />
     </Elements>
   );
@@ -550,12 +565,41 @@ function StripeCheckoutForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <PaymentElement />
+      <PaymentElement 
+        options={{
+          layout: {
+            type: 'tabs',
+            defaultCollapsed: false,
+          },
+          paymentMethodOrder: ['card', 'apple_pay', 'google_pay'],
+          wallets: {
+            applePay: 'auto',
+            googlePay: 'auto'
+          }
+        }}
+      />
       
       <div className="bg-green-900/20 border border-green-700/50 rounded-lg p-3">
         <div className="flex items-center space-x-2 text-sm">
           <span className="text-green-400">🛡️</span>
           <span className="text-green-400">Your payment information is encrypted and secure</span>
+        </div>
+      </div>
+
+      <div className="bg-blue-900/20 border border-blue-700/50 rounded-lg p-3">
+        <div className="text-xs text-blue-300 space-y-1">
+          <p className="flex items-center space-x-2">
+            <span>💳</span>
+            <span>Credit/Debit Cards</span>
+          </p>
+          <p className="flex items-center space-x-2">
+            <span>📱</span>
+            <span>Apple Pay (iOS devices)</span>
+          </p>
+          <p className="flex items-center space-x-2">
+            <span>🤖</span>
+            <span>Google Pay (Android devices)</span>
+          </p>
         </div>
       </div>
 
