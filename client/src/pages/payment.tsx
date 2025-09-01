@@ -197,9 +197,9 @@ export default function PaymentPage() {
               {/* Captain Cashout Brand */}
               <div className="flex items-center justify-center space-x-4 mb-8 scale-in">
                 <div className="w-20 h-20 premium-gradient rounded-2xl flex items-center justify-center shadow-2xl glow-effect float-animation">
-                  <span className="text-4xl">💰</span>
+                  <Zap className="w-12 h-12 text-white" />
                 </div>
-                <div className="text-left">
+                <div className="text-center">
                   <h1 className="text-5xl md:text-7xl font-bold mb-8 bg-gradient-to-r from-white via-blue-100 to-purple-200 bg-clip-text text-transparent leading-tight flex items-center justify-center gap-4">
                     Captain Cashout <Zap className="w-16 h-16 text-blue-400" />
                   </h1>
