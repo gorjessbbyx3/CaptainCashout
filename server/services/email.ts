@@ -81,7 +81,7 @@ export async function sendPaymentNotificationEmail(data: PaymentNotificationData
           
           <div class="footer">
             <p>This is an automated notification from Captain Cashout payment system.</p>
-            <p>For support, please contact: captaincashout@my.com</p>
+            <p>For support, contact @captaincashout on Instagram or email captaincashout@my.com</p>
           </div>
         </div>
       </body>

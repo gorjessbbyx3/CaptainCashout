@@ -433,7 +433,7 @@ export default function PaymentPage() {
                         {!import.meta.env.VITE_STRIPE_PUBLIC_KEY ? (
                           <div className="p-4 bg-yellow-900/20 border border-yellow-700/50 rounded-lg">
                             <p className="text-yellow-400 text-sm">
-                              ⚠️ Stripe payment processing is not configured. Please contact support.
+                              ⚠️ Stripe payment processing is not configured. Contact @captaincashout on Instagram for support.
                             </p>
                           </div>
                         ) : (
@@ -497,7 +497,7 @@ export default function PaymentPage() {
                   <span className="text-purple-400 text-2xl">🎧</span>
                 </div>
                 <h4 className="font-semibold text-white mb-2">24/7 Support</h4>
-                <p className="text-sm text-slate-400">Get help whenever you need it</p>
+                <p className="text-sm text-slate-400">Follow @captaincashout on Instagram for help</p>
               </CardContent>
             </Card>
           </div>
@@ -523,7 +523,7 @@ function StripePaymentForm({
     return (
       <div className="p-4 bg-red-900/20 border border-red-700/50 rounded-lg">
         <p className="text-red-400 text-sm">
-          Stripe is not configured. Please contact support.
+          Stripe is not configured. Contact @captaincashout on Instagram for support.
         </p>
       </div>
     );
