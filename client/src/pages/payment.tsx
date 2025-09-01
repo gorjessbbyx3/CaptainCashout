@@ -201,7 +201,7 @@ export default function PaymentPage() {
                 </div>
                 <div className="text-left">
                   <h1 className="text-5xl md:text-7xl font-bold mb-8 bg-gradient-to-r from-white via-blue-100 to-purple-200 bg-clip-text text-transparent leading-tight flex items-center justify-center gap-4">
-                    Streamline Your Payments <Zap className="w-16 h-16 text-blue-400" />
+                    Captain Cashout <Zap className="w-16 h-16 text-blue-400" />
                   </h1>
                   <p className="text-xl md:text-2xl text-slate-300 mb-12 max-w-3xl mx-auto leading-relaxed flex items-center justify-center gap-3">
                     Experience lightning-fast, secure transactions with our cutting-edge payment platform
