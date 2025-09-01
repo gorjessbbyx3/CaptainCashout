@@ -24,45 +24,32 @@ const trustlyConfig = {
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
-  // Get user by username
+  // Simple username validation endpoint
   app.get("/api/users/:username", async (req, res) => {
     try {
       const { username } = req.params;
-      const user = await storage.getUserByUsername(username);
       
-      if (!user) {
+      // Simple validation for username format
+      if (!username || username.length < 3) {
         return res.status(404).json({ 
           success: false, 
-          message: "User not found. Please check your username." 
+          message: "Username must be at least 3 characters long." 
         });
       }
 
+      // For now, accept any valid username format
       res.json({ 
         success: true, 
         user: {
-          id: user.id,
-          username: user.username,
-          displayName: user.displayName || user.username,
-          currentCredits: user.currentCredits
+          username: username,
+          displayName: username,
+          message: "Username is valid"
         }
       });
     } catch (error: any) {
       res.status(500).json({ 
         success: false, 
-        message: "Failed to lookup user: " + error.message 
-      });
-    }
-  });
-
-  // Get credit packages
-  app.get("/api/credit-packages", async (req, res) => {
-    try {
-      const packages = await storage.getCreditPackages();
-      res.json({ success: true, packages });
-    } catch (error: any) {
-      res.status(500).json({ 
-        success: false, 
-        message: "Failed to fetch credit packages: " + error.message 
+        message: "Failed to validate username: " + error.message 
       });
     }
   });
@@ -70,21 +57,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create payment intent for Stripe
   app.post("/api/create-payment-intent", async (req, res) => {
     try {
-      const { amount, username, packageId, paymentMethod = 'stripe_card' } = req.body;
+      const { amount, username, paymentMethod = 'stripe_card' } = req.body;
       
-      if (!amount || !username || !packageId) {
+      if (!amount || !username) {
         return res.status(400).json({ 
           success: false, 
-          message: "Missing required fields: amount, username, packageId" 
+          message: "Missing required fields: amount, username" 
         });
       }
 
-      // Verify package exists
-      const creditPackage = await storage.getCreditPackage(packageId);
-      if (!creditPackage) {
-        return res.status(404).json({ 
+      // Validate amount
+      const numAmount = parseFloat(amount);
+      if (isNaN(numAmount) || numAmount < 10 || numAmount > 500) {
+        return res.status(400).json({ 
           success: false, 
-          message: "Credit package not found" 
+          message: "Amount must be between $10 and $500" 
         });
       }
 
@@ -97,25 +84,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Create payment intent
       const paymentIntent = await stripe.paymentIntents.create({
-        amount: Math.round(parseFloat(amount) * 100), // Convert to cents
+        amount: Math.round(numAmount * 100), // Convert to cents
         currency: "usd",
         metadata: {
           username,
-          packageId,
           paymentMethod,
-          credits: creditPackage.credits.toString()
+          reloadAmount: amount
         }
       });
 
       // Create transaction record
       const transaction = await storage.createTransaction({
         username,
-        packageId,
         amount: amount.toString(),
-        credits: creditPackage.credits,
         paymentMethod: paymentMethod as any,
         stripePaymentIntentId: paymentIntent.id,
-        metadata: JSON.stringify({ paymentIntentId: paymentIntent.id, username })
+        metadata: JSON.stringify({ paymentIntentId: paymentIntent.id, username, reloadAmount: amount })
       });
 
       res.json({ 
@@ -124,6 +108,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         transactionId: transaction.id
       });
     } catch (error: any) {
+      // Send failure notification email if we have the required data
+      if (req.body.username && req.body.amount) {
+        try {
+          await sendPaymentNotificationEmail({
+            username: req.body.username,
+            amount: req.body.amount,
+            transactionId: 'system-error',
+            paymentMethod: 'Stripe',
+            status: 'failed',
+            errorMessage: error.message
+          });
+        } catch (emailError) {
+          console.error('Failed to send error notification email:', emailError);
+        }
+      }
+      
       res.status(500).json({ 
         success: false, 
         message: "Error creating payment intent: " + error.message 
@@ -134,31 +134,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Trustly payment processing
   app.post("/api/trustly-payment", async (req, res) => {
     try {
-      const { amount, username, packageId, country = 'US', firstName, lastName, email } = req.body;
+      const { amount, username, country = 'US', firstName, lastName, email } = req.body;
       
-      if (!amount || !username || !packageId || !country || !firstName || !lastName || !email) {
+      if (!amount || !username || !country || !firstName || !lastName || !email) {
         return res.status(400).json({ 
           success: false, 
-          message: "Missing required fields: amount, username, packageId, country, firstName, lastName, email" 
+          message: "Missing required fields: amount, username, country, firstName, lastName, email" 
         });
       }
 
-      // Verify package exists
-      const creditPackage = await storage.getCreditPackage(packageId);
-      
-      if (!creditPackage) {
-        return res.status(404).json({ 
+      // Validate amount
+      const numAmount = parseFloat(amount);
+      if (isNaN(numAmount) || numAmount < 10 || numAmount > 500) {
+        return res.status(400).json({ 
           success: false, 
-          message: "Package not found" 
+          message: "Amount must be between $10 and $500" 
         });
       }
 
       // Create transaction record
       const transaction = await storage.createTransaction({
         username,
-        packageId,
         amount: amount.toString(),
-        credits: creditPackage.credits,
         paymentMethod: 'trustly',
         metadata: JSON.stringify({ country, firstName, lastName, email, username })
       });
@@ -166,14 +163,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Process Trustly payment (simplified integration)
       // In production, you would integrate with actual Trustly API
       const trustlyResponse = await processTrustlyPayment({
-        amount: parseFloat(amount),
+        amount: numAmount,
         currency: 'USD',
         country,
         firstName,
         lastName,
         email,
         transactionId: transaction.id,
-        description: `Credit purchase - ${creditPackage.credits} credits`
+        description: `Account reload - $${amount}`
       });
 
       if (trustlyResponse.success) {
@@ -184,9 +181,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await sendPaymentNotificationEmail({
           username: username,
           amount: amount,
-          credits: creditPackage.credits,
           transactionId: transaction.id,
-          paymentMethod: 'Trustly'
+          paymentMethod: 'Trustly',
+          status: 'success'
         });
 
         res.json({ 
@@ -197,12 +194,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       } else {
         await storage.updateTransactionStatus(transaction.id, 'failed');
+        
+        // Send failure notification email
+        await sendPaymentNotificationEmail({
+          username: username,
+          amount: amount,
+          transactionId: transaction.id,
+          paymentMethod: 'Trustly',
+          status: 'failed',
+          errorMessage: trustlyResponse.error || "Trustly payment failed"
+        });
+        
         res.status(400).json({ 
           success: false, 
           message: trustlyResponse.error || "Trustly payment failed" 
         });
       }
     } catch (error: any) {
+      // Send failure notification email if we have the required data
+      if (req.body.username && req.body.amount) {
+        try {
+          await sendPaymentNotificationEmail({
+            username: req.body.username,
+            amount: req.body.amount,
+            transactionId: 'system-error',
+            paymentMethod: 'Trustly',
+            status: 'failed',
+            errorMessage: error.message
+          });
+        } catch (emailError) {
+          console.error('Failed to send error notification email:', emailError);
+        }
+      }
+      
       res.status(500).json({ 
         success: false, 
         message: "Error processing Trustly payment: " + error.message 
@@ -231,9 +255,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           await sendPaymentNotificationEmail({
             username: transaction.username,
             amount: amount,
-            credits: transaction.credits,
             transactionId: transaction.id,
-            paymentMethod: 'Trustly'
+            paymentMethod: 'Trustly',
+            status: 'success'
           });
         }
       }
@@ -264,7 +288,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (event.type === 'payment_intent.succeeded') {
         const paymentIntent = event.data.object as Stripe.PaymentIntent;
-        const { username, packageId, credits } = paymentIntent.metadata;
+        const { username } = paymentIntent.metadata;
 
         // Find transaction by payment intent ID
         const transaction = await storage.getTransactionByPaymentIntentId(paymentIntent.id);
@@ -280,10 +304,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await sendPaymentNotificationEmail({
           username: username,
           amount: (paymentIntent.amount / 100).toString(),
-          credits: parseInt(credits),
           transactionId: transaction.id,
-          paymentMethod: 'Stripe'
+          paymentMethod: 'Stripe',
+          status: 'success'
         });
+      } else if (event.type === 'payment_intent.payment_failed') {
+        const paymentIntent = event.data.object as Stripe.PaymentIntent;
+        const { username } = paymentIntent.metadata;
+
+        // Find transaction by payment intent ID
+        const transaction = await storage.getTransactionByPaymentIntentId(paymentIntent.id);
+        if (transaction) {
+          // Update transaction status
+          await storage.updateTransactionStatus(transaction.id, 'failed');
+
+          // Send failure notification email
+          await sendPaymentNotificationEmail({
+            username: username,
+            amount: (paymentIntent.amount / 100).toString(),
+            transactionId: transaction.id,
+            paymentMethod: 'Stripe',
+            status: 'failed',
+            errorMessage: paymentIntent.last_payment_error?.message || 'Payment failed'
+          });
+        }
       }
 
       res.json({ received: true });

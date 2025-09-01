@@ -31,9 +31,9 @@ export const creditPackages = pgTable("credit_packages", {
 export const transactions = pgTable("transactions", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   username: text("username").notNull(),
-  packageId: varchar("package_id").references(() => creditPackages.id).notNull(),
+  packageId: varchar("package_id").references(() => creditPackages.id),
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
-  credits: integer("credits").notNull(),
+  credits: integer("credits"),
   paymentMethod: paymentMethodEnum("payment_method").notNull(),
   paymentStatus: paymentStatusEnum("payment_status").default('pending').notNull(),
   stripePaymentIntentId: text("stripe_payment_intent_id"),
@@ -77,7 +77,7 @@ export const insertTransactionSchema = createInsertSchema(transactions).pick({
   stripePaymentIntentId: true,
   trustlyTransactionId: true,
   metadata: true,
-});
+}).partial({ packageId: true, credits: true });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;

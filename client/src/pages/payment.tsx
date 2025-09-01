@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
+import gamingImage from "@assets/IMG_4688_1756679627792.webp";
 
 const stripePromise = import.meta.env.VITE_STRIPE_PUBLIC_KEY 
   ? loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY)
@@ -19,6 +20,10 @@ const stripePromise = import.meta.env.VITE_STRIPE_PUBLIC_KEY
 
 const paymentFormSchema = z.object({
   username: z.string().min(1, "Username is required"),
+  amount: z.string().refine((val) => {
+    const num = parseFloat(val);
+    return num >= 10 && num <= 500;
+  }, "Amount must be between $10 and $500"),
 });
 
 const trustlySchema = z.object({
@@ -31,18 +36,16 @@ const trustlySchema = z.object({
 type PaymentForm = z.infer<typeof paymentFormSchema>;
 type TrustlyForm = z.infer<typeof trustlySchema>;
 
-
-interface CreditPackage {
-  id: string;
-  name: string;
-  credits: number;
-  price: string;
-  bonusPercentage: number;
-}
+const presetAmounts = [
+  { label: "$10", value: "10.00" },
+  { label: "$25", value: "25.00" },
+  { label: "$50", value: "50.00" },
+];
 
 export default function PaymentPage() {
   const [username, setUsername] = useState<string>("");
-  const [selectedPackage, setSelectedPackage] = useState<CreditPackage | null>(null);
+  const [amount, setAmount] = useState<string>("");
+  const [customAmount, setCustomAmount] = useState<string>("");
   const [paymentMethod, setPaymentMethod] = useState<'stripe' | 'trustly'>('stripe');
   const [clientSecret, setClientSecret] = useState<string>("");
   const [isPaymentReady, setIsPaymentReady] = useState(false);
@@ -50,18 +53,17 @@ export default function PaymentPage() {
 
   const paymentForm = useForm<PaymentForm>({
     resolver: zodResolver(paymentFormSchema),
-  });
-
-  const { data: creditPackages, isLoading: packagesLoading } = useQuery({
-    queryKey: ['/api/credit-packages'],
+    defaultValues: {
+      username: "",
+      amount: ""
+    }
   });
 
 
   const createPaymentIntentMutation = useMutation({
-    mutationFn: async ({ packageId, amount }: { packageId: string; amount: string }) => {
+    mutationFn: async ({ amount }: { amount: string }) => {
       const response = await apiRequest("POST", "/api/create-payment-intent", {
         username,
-        packageId,
         amount,
         paymentMethod: 'stripe_card'
       });
@@ -85,8 +87,7 @@ export default function PaymentPage() {
     mutationFn: async (data: TrustlyForm) => {
       const response = await apiRequest("POST", "/api/trustly-payment", {
         username,
-        packageId: selectedPackage?.id,
-        amount: selectedPackage?.price,
+        amount,
         country: data.country,
         firstName: data.firstName,
         lastName: data.lastName,
@@ -105,7 +106,8 @@ export default function PaymentPage() {
           description: "You'll be redirected to complete your bank transfer.",
         });
         setUsername("");
-        setSelectedPackage(null);
+        setAmount("");
+        setCustomAmount("");
         setIsPaymentReady(false);
         paymentForm.reset();
       } else {
@@ -119,12 +121,22 @@ export default function PaymentPage() {
   });
 
 
-  const handlePackageSelect = (pkg: CreditPackage) => {
-    setSelectedPackage(pkg);
-    if (paymentMethod === 'stripe' && username) {
+  const handleAmountSelect = (selectedAmount: string) => {
+    setAmount(selectedAmount);
+    setCustomAmount(""); // Clear custom amount when preset is selected
+    if (paymentMethod === 'stripe' && username && selectedAmount) {
       createPaymentIntentMutation.mutate({
-        packageId: pkg.id,
-        amount: pkg.price
+        amount: selectedAmount
+      });
+    }
+  };
+
+  const handleCustomAmountChange = (customValue: string) => {
+    setCustomAmount(customValue);
+    setAmount(customValue); // Use custom amount as the main amount
+    if (paymentMethod === 'stripe' && username && customValue) {
+      createPaymentIntentMutation.mutate({
+        amount: customValue
       });
     }
   };
@@ -134,10 +146,9 @@ export default function PaymentPage() {
     setIsPaymentReady(false);
     setClientSecret("");
     
-    if (method === 'stripe' && selectedPackage && username) {
+    if (method === 'stripe' && amount && username) {
       createPaymentIntentMutation.mutate({
-        packageId: selectedPackage.id,
-        amount: selectedPackage.price
+        amount: amount
       });
     }
   };
@@ -258,65 +269,77 @@ export default function PaymentPage() {
               </CardContent>
             </Card>
 
-            {/* Credit Packages */}
-            <Card className="bg-slate-800 border-slate-700" data-testid="credit-packages-card">
+            {/* Reload Amounts */}
+            <Card className="bg-slate-800 border-slate-700" data-testid="reload-amounts-card">
               <CardContent className="p-6">
                 <div className="flex items-center space-x-3 mb-6">
                   <div className="w-10 h-10 bg-yellow-500/20 rounded-lg flex items-center justify-center">
-                    <span className="text-yellow-400">💎</span>
+                    <span className="text-yellow-400">💰</span>
                   </div>
                   <div>
-                    <h3 className="text-xl font-semibold text-white">Credit Packages</h3>
+                    <h3 className="text-xl font-semibold text-white">Reload Amount</h3>
                     <p className="text-sm text-slate-400">Choose your top-up amount</p>
                   </div>
                 </div>
 
-                {packagesLoading ? (
-                  <div className="flex justify-center py-8">
-                    <LoadingSpinner />
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-2 gap-3 mb-6">
-                    {(creditPackages as any)?.packages?.map((pkg: CreditPackage) => (
-                      <div
-                        key={pkg.id}
-                        data-testid={`package-${pkg.name.toLowerCase()}`}
-                        className={`cursor-pointer rounded-lg p-4 transition-all ${
-                          selectedPackage?.id === pkg.id
-                            ? 'bg-blue-600/20 border-2 border-blue-500'
-                            : 'bg-slate-700/50 border border-slate-600 hover:border-blue-500'
-                        }`}
-                        onClick={() => handlePackageSelect(pkg)}
-                      >
-                        <div className="text-center">
-                          <div className="text-2xl font-bold text-blue-400 mb-1">
-                            ${pkg.price}
-                          </div>
-                          <div className="text-sm text-slate-300">
-                            {pkg.credits.toLocaleString()} Credits
-                          </div>
-                          {pkg.bonusPercentage > 0 && (
-                            <div className="text-xs text-green-400 mt-1">
-                              +{pkg.bonusPercentage}% Bonus
-                            </div>
-                          )}
+                {/* Gaming Image */}
+                <div className="mb-6 rounded-lg overflow-hidden">
+                  <img 
+                    src={gamingImage} 
+                    alt="Popular gaming platforms" 
+                    className="w-full h-24 object-cover opacity-80"
+                  />
+                </div>
+
+                {/* Preset Amounts */}
+                <div className="grid grid-cols-3 gap-3 mb-6">
+                  {presetAmounts.map((preset) => (
+                    <div
+                      key={preset.value}
+                      data-testid={`amount-${preset.label.replace('$', '')}`}
+                      className={`cursor-pointer rounded-lg p-4 transition-all ${
+                        amount === preset.value && !customAmount
+                          ? 'bg-blue-600/20 border-2 border-blue-500'
+                          : 'bg-slate-700/50 border border-slate-600 hover:border-blue-500'
+                      }`}
+                      onClick={() => handleAmountSelect(preset.value)}
+                    >
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-blue-400">
+                          {preset.label}
+                        </div>
+                        <div className="text-xs text-slate-400 mt-1">
+                          Quick reload
                         </div>
                       </div>
-                    ))}
-                  </div>
-                )}
-
-                {selectedPackage && (
-                  <div className="bg-blue-900/20 border border-blue-700/50 rounded-lg p-4" data-testid="selected-package">
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium text-white">Selected Package:</span>
-                      <span className="text-blue-400 font-bold">${selectedPackage.price}</span>
                     </div>
-                    <div className="flex items-center justify-between mt-2">
-                      <span className="text-sm text-slate-400">Credits:</span>
-                      <span className="text-sm font-medium text-white">
-                        {selectedPackage.credits.toLocaleString()}
-                      </span>
+                  ))}
+                </div>
+
+                {/* Custom Amount Input */}
+                <div className="mb-6">
+                  <Label htmlFor="customAmount" className="text-white mb-2 block">
+                    Or enter custom amount ($10 - $500)
+                  </Label>
+                  <Input
+                    id="customAmount"
+                    data-testid="input-custom-amount"
+                    placeholder="Enter amount"
+                    type="number"
+                    min="10"
+                    max="500"
+                    step="0.01"
+                    className="bg-slate-700 border-slate-600 text-white placeholder-slate-400"
+                    value={customAmount}
+                    onChange={(e) => handleCustomAmountChange(e.target.value)}
+                  />
+                </div>
+
+                {amount && (
+                  <div className="bg-blue-900/20 border border-blue-700/50 rounded-lg p-4" data-testid="selected-amount">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium text-white">Reload Amount:</span>
+                      <span className="text-blue-400 font-bold text-xl">${amount}</span>
                     </div>
                   </div>
                 )}
@@ -325,7 +348,7 @@ export default function PaymentPage() {
           </div>
 
           {/* Payment Methods */}
-          {username && selectedPackage && (
+          {username && amount && (
             <Card className="mt-8 bg-slate-800 border-slate-700" data-testid="payment-methods-card">
               <CardContent className="p-6">
                 <div className="flex items-center space-x-3 mb-6">
@@ -399,15 +422,15 @@ export default function PaymentPage() {
                           <StripePaymentForm
                             clientSecret={clientSecret}
                             isReady={isPaymentReady}
-                            amount={selectedPackage.price}
-                            credits={selectedPackage.credits}
+                            amount={amount}
                             onSuccess={() => {
                               toast({
                                 title: "Payment Successful!",
-                                description: `${selectedPackage.credits} credits have been added to your account.`,
+                                description: `$${amount} has been added to your account.`,
                               });
                               setUsername("");
-                              setSelectedPackage(null);
+                              setAmount("");
+                              setCustomAmount("");
                               setIsPaymentReady(false);
                             }}
                           />
@@ -419,7 +442,7 @@ export default function PaymentPage() {
                       <TrustlyForm
                         onSubmit={trustlyMutation.mutate}
                         isLoading={trustlyMutation.isPending}
-                        amount={selectedPackage.price}
+                        amount={amount}
                       />
                     )}
                   </div>
@@ -471,13 +494,11 @@ function StripePaymentForm({
   clientSecret, 
   isReady, 
   amount, 
-  credits, 
   onSuccess 
 }: { 
   clientSecret: string; 
   isReady: boolean; 
   amount: string; 
-  credits: number; 
   onSuccess: () => void; 
 }) {
   if (!stripePromise) {
@@ -516,18 +537,16 @@ function StripePaymentForm({
         }
       }}
     >
-      <StripeCheckoutForm amount={amount} credits={credits} onSuccess={onSuccess} />
+      <StripeCheckoutForm amount={amount} onSuccess={onSuccess} />
     </Elements>
   );
 }
 
 function StripeCheckoutForm({ 
   amount, 
-  credits, 
   onSuccess 
 }: { 
   amount: string; 
-  credits: number; 
   onSuccess: () => void; 
 }) {
   const stripe = useStripe();
