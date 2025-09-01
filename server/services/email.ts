@@ -16,12 +16,11 @@ interface PaymentNotificationData {
   credits: number;
   transactionId: string;
   paymentMethod: string;
-  packageName?: string;
 }
 
 export async function sendPaymentNotificationEmail(data: PaymentNotificationData): Promise<void> {
   try {
-    const { username, amount, credits, transactionId, paymentMethod, packageName } = data;
+    const { username, amount, credits, transactionId, paymentMethod } = data;
     
     const htmlContent = `
       <!DOCTYPE html>
@@ -57,10 +56,6 @@ export async function sendPaymentNotificationEmail(data: PaymentNotificationData
               <strong>Credits Added:</strong>
               <span>${credits.toLocaleString()} credits</span>
             </div>
-            ${packageName ? `<div class="detail-row">
-              <strong>Package:</strong>
-              <span>${packageName}</span>
-            </div>` : ''}
             <div class="detail-row">
               <strong>Payment Method:</strong>
               <span>${paymentMethod}</span>
@@ -96,8 +91,7 @@ export async function sendPaymentNotificationEmail(data: PaymentNotificationData
         
         Username: ${username}
         Amount: $${amount}
-        Credits Added: ${credits.toLocaleString()}${packageName ? `
-        Package: ${packageName}` : ''}
+        Credits Added: ${credits.toLocaleString()}
         Payment Method: ${paymentMethod}
         Transaction ID: ${transactionId}
         Date: ${new Date().toLocaleString()}

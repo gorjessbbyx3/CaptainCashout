@@ -32,10 +32,17 @@ type PaymentForm = z.infer<typeof paymentFormSchema>;
 type TrustlyForm = z.infer<typeof trustlySchema>;
 
 
+interface CreditPackage {
+  id: string;
+  name: string;
+  credits: number;
+  price: string;
+  bonusPercentage: number;
+}
 
 export default function PaymentPage() {
   const [username, setUsername] = useState<string>("");
-  const [customAmount, setCustomAmount] = useState<string>("");
+  const [selectedPackage, setSelectedPackage] = useState<CreditPackage | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<'stripe' | 'trustly'>('stripe');
   const [clientSecret, setClientSecret] = useState<string>("");
   const [isPaymentReady, setIsPaymentReady] = useState(false);
@@ -45,21 +52,16 @@ export default function PaymentPage() {
     resolver: zodResolver(paymentFormSchema),
   });
 
-  
+  const { data: creditPackages, isLoading: packagesLoading } = useQuery({
+    queryKey: ['/api/credit-packages'],
+  });
 
-  const getPaymentAmount = () => {
-    return customAmount || "";
-  };
-
-  const getCreditsAmount = () => {
-    return customAmount ? parseInt(customAmount) * 100 : 0;
-  };
 
   const createPaymentIntentMutation = useMutation({
-    mutationFn: async ({ amount }: { amount: string }) => {
+    mutationFn: async ({ packageId, amount }: { packageId: string; amount: string }) => {
       const response = await apiRequest("POST", "/api/create-payment-intent", {
         username,
-        packageId: 'custom',
+        packageId,
         amount,
         paymentMethod: 'stripe_card'
       });
@@ -83,8 +85,8 @@ export default function PaymentPage() {
     mutationFn: async (data: TrustlyForm) => {
       const response = await apiRequest("POST", "/api/trustly-payment", {
         username,
-        packageId: 'custom',
-        amount: getPaymentAmount(),
+        packageId: selectedPackage?.id,
+        amount: selectedPackage?.price,
         country: data.country,
         firstName: data.firstName,
         lastName: data.lastName,
@@ -94,6 +96,7 @@ export default function PaymentPage() {
     },
     onSuccess: (data) => {
       if (data.success) {
+        // Redirect to Trustly's payment page
         if (data.redirectUrl) {
           window.open(data.redirectUrl, '_blank');
         }
@@ -101,7 +104,10 @@ export default function PaymentPage() {
           title: "Payment Initiated!",
           description: "You'll be redirected to complete your bank transfer.",
         });
-        resetForm();
+        setUsername("");
+        setSelectedPackage(null);
+        setIsPaymentReady(false);
+        paymentForm.reset();
       } else {
         toast({
           title: "Payment Failed",
@@ -112,26 +118,14 @@ export default function PaymentPage() {
     },
   });
 
-  const resetForm = () => {
-    setUsername("");
-    setCustomAmount("");
-    setIsPaymentReady(false);
-    paymentForm.reset();
-  };
 
-  const handleCustomAmountChange = (amount: string) => {
-    setCustomAmount(amount);
-    setIsPaymentReady(false);
-    setClientSecret("");
-  };
-
-  const handleCustomAmountConfirm = () => {
-    if (customAmount && parseFloat(customAmount) >= 1 && username) {
-      if (paymentMethod === 'stripe') {
-        createPaymentIntentMutation.mutate({
-          amount: customAmount
-        });
-      }
+  const handlePackageSelect = (pkg: CreditPackage) => {
+    setSelectedPackage(pkg);
+    if (paymentMethod === 'stripe' && username) {
+      createPaymentIntentMutation.mutate({
+        packageId: pkg.id,
+        amount: pkg.price
+      });
     }
   };
 
@@ -139,254 +133,340 @@ export default function PaymentPage() {
     setPaymentMethod(method);
     setIsPaymentReady(false);
     setClientSecret("");
-
-    const amount = getPaymentAmount();
-    if (method === 'stripe' && amount && username) {
+    
+    if (method === 'stripe' && selectedPackage && username) {
       createPaymentIntentMutation.mutate({
-        amount
+        packageId: selectedPackage.id,
+        amount: selectedPackage.price
       });
     }
   };
 
-  const isReadyForPayment = username && customAmount && parseFloat(customAmount) >= 1;
-
   return (
-    <div className="min-h-screen bg-white">
-      {/* Tesla-style Navigation */}
-      <nav className="fixed top-0 w-full z-50 bg-white/95 backdrop-blur-md border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-6 sm:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-black rounded flex items-center justify-center">
-                <span className="text-white text-sm font-bold">C</span>
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-900">
+      {/* Header */}
+      <header className="bg-slate-900/80 backdrop-blur-lg border-b border-slate-700 sticky top-0 z-50">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-600/30">
+                <span className="text-xl">💰</span>
               </div>
-              <span className="text-xl font-medium text-black">Captain Cashout</span>
+              <div>
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent">
+                  Captain Cashout
+                </h1>
+                <p className="text-sm text-slate-400">Secure Payment Portal</p>
+              </div>
             </div>
-            <div className="hidden md:flex items-center space-x-8 text-sm font-medium text-gray-600">
-              <span>Secure</span>
-              <span>Instant</span>
-              <span>Trusted</span>
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2 text-sm text-slate-400">
+                <span className="text-green-400">🛡️</span>
+                <span>SSL Secured</span>
+              </div>
+              <div className="flex items-center space-x-2 text-sm text-slate-400">
+                <span className="text-green-400">🔒</span>
+                <span>PCI Compliant</span>
+              </div>
             </div>
           </div>
         </div>
-      </nav>
+      </header>
 
-      {/* Hero Section - Tesla Style */}
-      <section className="relative min-h-screen flex items-end justify-center overflow-hidden">
-        {/* Background Image */}
-        <div 
-          className="absolute inset-0 bg-cover bg-center"
-          style={{
-            backgroundImage: `url('/assets/hero-bg.webp')`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-          }}
-        />
-
-        {/* Content */}
-        <div className="relative z-10 text-center px-6 max-w-6xl mx-auto pb-16">
-          {/* Tesla-style CTA */}
-          <div className="flex justify-center">
-            <Button 
-              className="bg-white text-black hover:bg-gray-100 px-12 py-4 text-lg font-medium rounded-none border-0"
-              onClick={() => document.getElementById('amount')?.scrollIntoView({ behavior: 'smooth' })}
-            >
-              Order Now
-            </Button>
-          </div>
-        </div>
-      </section>
-
-      {/* Username Section - Tesla Clean */}
-      <section className="py-24 bg-gray-50">
-        <div className="max-w-4xl mx-auto px-6 text-center">
-          <h3 className="text-4xl font-light text-black mb-4">Enter Your Username</h3>
-          <p className="text-xl text-gray-600 mb-12 font-light">Simple. Secure. Fast.</p>
-
-          <div className="max-w-md mx-auto">
-            <Input
-              data-testid="input-username"
-              placeholder="Username"
-              className="h-14 text-lg text-center border-0 border-b-2 border-gray-300 rounded-none bg-transparent focus:border-black focus:ring-0 placeholder:text-gray-400"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+      <main className="container mx-auto px-4 py-8">
+        <div className="max-w-6xl mx-auto">
+          {/* Hero Section */}
+          <div className="relative text-center mb-12 overflow-hidden rounded-2xl">
+            {/* Background Image */}
+            <div 
+              className="absolute inset-0 bg-cover bg-center opacity-20"
+              style={{
+                backgroundImage: `url('/attached_assets/IMG_4688_1756680598898.webp')`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                filter: 'brightness(0.3) saturate(1.2)'
+              }}
             />
-
-            {username && (
-              <div className="mt-8 p-6 bg-white rounded-lg shadow-sm border border-gray-200" data-testid="username-entered">
-                <div className="text-black font-medium">Ready: {username}</div>
-              </div>
-            )}
-          </div>
-        </div>
-      </section>
-
-      {/* Amount Input Section */}
-      <section id="amount" className="py-24 bg-white">
-        <div className="max-w-4xl mx-auto px-6 text-center">
-          <h3 className="text-4xl font-light text-black mb-4">Enter Amount</h3>
-          <p className="text-xl text-gray-600 font-light mb-12">Choose any amount starting from $1</p>
-
-          <div className="max-w-sm mx-auto mb-8">
-            <div className="relative">
-              <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-2xl text-gray-400">$</span>
-              <Input
-                data-testid="input-custom-amount"
-                type="number"
-                min="1"
-                step="0.01"
-                placeholder="0"
-                className="h-16 text-2xl text-center pl-12 border-0 border-b-2 border-gray-300 rounded-none bg-transparent focus:border-black focus:ring-0"
-                value={customAmount}
-                onChange={(e) => handleCustomAmountChange(e.target.value)}
-              />
-            </div>
-
-            {customAmount && parseFloat(customAmount) >= 1 && (
-              <div className="mt-6 text-gray-600">
-                <span className="text-lg font-light">
-                  {(parseInt(customAmount) * 100).toLocaleString()} Credits
-                </span>
-              </div>
-            )}
-          </div>
-
-          {customAmount && parseFloat(customAmount) >= 1 && username && (
-            <Button
-              onClick={handleCustomAmountConfirm}
-              className="bg-black text-white hover:bg-gray-800 px-12 py-4 text-lg font-medium rounded-full"
-              data-testid="button-confirm-custom-amount"
-            >
-              Continue
-            </Button>
-          )}
-        </div>
-      </section>
-
-      {/* Payment Section - Tesla Minimal */}
-      {isReadyForPayment && (
-        <section className="py-24 bg-white">
-          <div className="max-w-4xl mx-auto px-6">
-            <div className="text-center mb-16">
-              <h3 className="text-4xl font-light text-black mb-4">Complete Your Order</h3>
-              <div className="text-xl text-gray-600 font-light">
-                ${getPaymentAmount()} • {getCreditsAmount().toLocaleString()} Credits
+            {/* Gradient Overlay */}
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent" />
+            
+            {/* Content */}
+            <div className="relative z-10 py-12 px-6">
+              <h2 className="text-4xl md:text-5xl font-bold mb-4">
+                <span className="bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent">
+                  Power Up
+                </span>{" "}
+                <span className="text-white">Your Account</span>
+              </h2>
+              <p className="text-xl text-slate-300 mb-6">Quick, secure, and hassle-free credit top-ups</p>
+              <div className="flex items-center justify-center space-x-6 text-sm text-slate-400">
+                <div className="flex items-center space-x-2">
+                  <span className="text-yellow-400">⚡</span>
+                  <span>Instant Processing</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <span className="text-purple-400">👥</span>
+                  <span>2M+ Active Players</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <span className="text-green-400">🏆</span>
+                  <span>99.9% Uptime</span>
+                </div>
               </div>
             </div>
+          </div>
 
-            <div className="grid lg:grid-cols-2 gap-16">
-              {/* Payment Method Selection - Tesla Style */}
-              <div className="space-y-6">
-                <h4 className="text-2xl font-light text-black mb-8">Payment Method</h4>
-
-                <div
-                  data-testid="payment-method-stripe"
-                  className={`cursor-pointer p-6 border-2 transition-all ${
-                    paymentMethod === 'stripe'
-                      ? 'border-black bg-gray-50'
-                      : 'border-gray-200 hover:border-gray-400'
-                  }`}
-                  onClick={() => handlePaymentMethodChange('stripe')}
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="text-lg font-medium text-black">Credit Card</div>
-                      <div className="text-sm text-gray-500 font-light">Visa, Mastercard, Amex</div>
-                    </div>
-                    <div className={`w-4 h-4 rounded-full border-2 ${
-                      paymentMethod === 'stripe' ? 'border-black bg-black' : 'border-gray-300'
-                    }`} />
+          <div className="grid lg:grid-cols-2 gap-8">
+            {/* Username Input */}
+            <Card className="bg-slate-800 border-slate-700" data-testid="username-input-card">
+              <CardContent className="p-6">
+                <div className="flex items-center space-x-3 mb-6">
+                  <div className="w-10 h-10 bg-blue-600/20 rounded-lg flex items-center justify-center">
+                    <span className="text-blue-400">👤</span>
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-semibold text-white">Your Username</h3>
+                    <p className="text-sm text-slate-400">Enter your gaming username</p>
                   </div>
                 </div>
 
-                <div
-                  data-testid="payment-method-trustly"
-                  className={`cursor-pointer p-6 border-2 transition-all ${
-                    paymentMethod === 'trustly'
-                      ? 'border-black bg-gray-50'
-                      : 'border-gray-200 hover:border-gray-400'
-                  }`}
-                  onClick={() => handlePaymentMethodChange('trustly')}
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="text-lg font-medium text-black">Bank Transfer</div>
-                      <div className="text-sm text-gray-500 font-light">Secure Trustly</div>
-                    </div>
-                    <div className={`w-4 h-4 rounded-full border-2 ${
-                      paymentMethod === 'trustly' ? 'border-black bg-black' : 'border-gray-300'
-                    }`} />
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="username" className="text-white">Username</Label>
+                    <Input
+                      id="username"
+                      data-testid="input-username"
+                      placeholder="Enter your username"
+                      className="bg-slate-700 border-slate-600 text-white placeholder-slate-400"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                    />
                   </div>
                 </div>
-              </div>
 
-              {/* Payment Form */}
-              <div className="space-y-6">
-                <h4 className="text-2xl font-light text-black mb-8">Payment Details</h4>
-
-                {paymentMethod === 'stripe' && (
-                  <>
-                    {!import.meta.env.VITE_STRIPE_PUBLIC_KEY ? (
-                      <div className="p-6 bg-yellow-50 border border-yellow-200">
-                        <p className="text-yellow-800 font-light">
-                          Payment processing not configured. Contact support.
-                        </p>
+                {username && (
+                  <div className="mt-6 p-4 bg-blue-900/20 border border-blue-700/50 rounded-lg" data-testid="username-entered">
+                    <div className="flex items-center space-x-3">
+                      <span className="text-blue-400">✨</span>
+                      <div>
+                        <p className="font-medium text-blue-400">Ready for Payment</p>
+                        <p className="text-sm text-slate-300">Username: {username}</p>
                       </div>
-                    ) : (
-                      <StripePaymentForm
-                        clientSecret={clientSecret}
-                        isReady={isPaymentReady}
-                        amount={getPaymentAmount()}
-                        credits={getCreditsAmount()}
-                        onSuccess={() => {
-                          toast({
-                            title: "Payment Successful!",
-                            description: `${getCreditsAmount()} credits added to your account.`,
-                          });
-                          resetForm();
-                        }}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Credit Packages */}
+            <Card className="bg-slate-800 border-slate-700" data-testid="credit-packages-card">
+              <CardContent className="p-6">
+                <div className="flex items-center space-x-3 mb-6">
+                  <div className="w-10 h-10 bg-yellow-500/20 rounded-lg flex items-center justify-center">
+                    <span className="text-yellow-400">💎</span>
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-semibold text-white">Credit Packages</h3>
+                    <p className="text-sm text-slate-400">Choose your top-up amount</p>
+                  </div>
+                </div>
+
+                {packagesLoading ? (
+                  <div className="flex justify-center py-8">
+                    <LoadingSpinner />
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-3 mb-6">
+                    {(creditPackages as any)?.packages?.map((pkg: CreditPackage) => (
+                      <div
+                        key={pkg.id}
+                        data-testid={`package-${pkg.name.toLowerCase()}`}
+                        className={`cursor-pointer rounded-lg p-4 transition-all ${
+                          selectedPackage?.id === pkg.id
+                            ? 'bg-blue-600/20 border-2 border-blue-500'
+                            : 'bg-slate-700/50 border border-slate-600 hover:border-blue-500'
+                        }`}
+                        onClick={() => handlePackageSelect(pkg)}
+                      >
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-blue-400 mb-1">
+                            ${pkg.price}
+                          </div>
+                          <div className="text-sm text-slate-300">
+                            {pkg.credits.toLocaleString()} Credits
+                          </div>
+                          {pkg.bonusPercentage > 0 && (
+                            <div className="text-xs text-green-400 mt-1">
+                              +{pkg.bonusPercentage}% Bonus
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {selectedPackage && (
+                  <div className="bg-blue-900/20 border border-blue-700/50 rounded-lg p-4" data-testid="selected-package">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium text-white">Selected Package:</span>
+                      <span className="text-blue-400 font-bold">${selectedPackage.price}</span>
+                    </div>
+                    <div className="flex items-center justify-between mt-2">
+                      <span className="text-sm text-slate-400">Credits:</span>
+                      <span className="text-sm font-medium text-white">
+                        {selectedPackage.credits.toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Payment Methods */}
+          {username && selectedPackage && (
+            <Card className="mt-8 bg-slate-800 border-slate-700" data-testid="payment-methods-card">
+              <CardContent className="p-6">
+                <div className="flex items-center space-x-3 mb-6">
+                  <div className="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
+                    <span className="text-green-400">💳</span>
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-semibold text-white">Payment Method</h3>
+                    <p className="text-sm text-slate-400">Choose how you'd like to pay</p>
+                  </div>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-6">
+                  {/* Payment Method Selection */}
+                  <div className="space-y-4">
+                    <h4 className="font-medium text-white mb-4">Select Payment Method</h4>
+
+                    <div
+                      data-testid="payment-method-stripe"
+                      className={`cursor-pointer rounded-lg p-4 transition-all ${
+                        paymentMethod === 'stripe'
+                          ? 'bg-blue-600/20 border-2 border-blue-500'
+                          : 'bg-slate-700/50 border border-slate-600 hover:border-blue-500'
+                      }`}
+                      onClick={() => handlePaymentMethodChange('stripe')}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <span className="text-blue-400 text-xl">💳</span>
+                        <div>
+                          <p className="font-medium text-white">Credit/Debit Card</p>
+                          <p className="text-sm text-slate-400">Visa, Mastercard, American Express</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div
+                      data-testid="payment-method-trustly"
+                      className={`cursor-pointer rounded-lg p-4 transition-all ${
+                        paymentMethod === 'trustly'
+                          ? 'bg-blue-600/20 border-2 border-blue-500'
+                          : 'bg-slate-700/50 border border-slate-600 hover:border-blue-500'
+                      }`}
+                      onClick={() => handlePaymentMethodChange('trustly')}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <span className="text-blue-400 text-xl">🏦</span>
+                        <div>
+                          <p className="font-medium text-white">Trustly</p>
+                          <p className="text-sm text-slate-400">Secure bank transfers</p>
+                        </div>
+                        <div className="ml-auto bg-blue-600 text-white px-2 py-1 rounded text-xs">
+                          Popular
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Payment Form */}
+                  <div className="space-y-4">
+                    <h4 className="font-medium text-white mb-4">Payment Details</h4>
+
+                    {paymentMethod === 'stripe' && (
+                      <>
+                        {!import.meta.env.VITE_STRIPE_PUBLIC_KEY ? (
+                          <div className="p-4 bg-yellow-900/20 border border-yellow-700/50 rounded-lg">
+                            <p className="text-yellow-400 text-sm">
+                              ⚠️ Stripe payment processing is not configured. Please contact support.
+                            </p>
+                          </div>
+                        ) : (
+                          <StripePaymentForm
+                            clientSecret={clientSecret}
+                            isReady={isPaymentReady}
+                            amount={selectedPackage.price}
+                            credits={selectedPackage.credits}
+                            onSuccess={() => {
+                              toast({
+                                title: "Payment Successful!",
+                                description: `${selectedPackage.credits} credits have been added to your account.`,
+                              });
+                              setUsername("");
+                              setSelectedPackage(null);
+                              setIsPaymentReady(false);
+                            }}
+                          />
+                        )}
+                      </>
+                    )}
+
+                    {paymentMethod === 'trustly' && (
+                      <TrustlyForm
+                        onSubmit={trustlyMutation.mutate}
+                        isLoading={trustlyMutation.isPending}
+                        amount={selectedPackage.price}
                       />
                     )}
-                  </>
-                )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
-                {paymentMethod === 'trustly' && (
-                  <TrustlyForm
-                    onSubmit={trustlyMutation.mutate}
-                    isLoading={trustlyMutation.isPending}
-                    amount={getPaymentAmount()}
-                  />
-                )}
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
+          {/* Trust Indicators */}
+          <div className="mt-8 grid md:grid-cols-3 gap-6">
+            <Card className="bg-slate-800 border-slate-700 text-center">
+              <CardContent className="p-6">
+                <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <span className="text-green-400 text-2xl">🛡️</span>
+                </div>
+                <h4 className="font-semibold text-white mb-2">Bank-Level Security</h4>
+                <p className="text-sm text-slate-400">256-bit SSL encryption protects all transactions</p>
+              </CardContent>
+            </Card>
 
-      {/* Footer - Tesla Minimal */}
-      <footer className="py-16 bg-black text-white">
-        <div className="max-w-6xl mx-auto px-6 text-center">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-            <div>
-              <div className="text-2xl font-light mb-2">Secure</div>
-              <div className="text-sm font-light opacity-70">Bank-level encryption</div>
-            </div>
-            <div>
-              <div className="text-2xl font-light mb-2">Instant</div>
-              <div className="text-sm font-light opacity-70">Immediate processing</div>
-            </div>
-            <div>
-              <div className="text-2xl font-light mb-2">Support</div>
-              <div className="text-sm font-light opacity-70">Always available</div>
-            </div>
+            <Card className="bg-slate-800 border-slate-700 text-center">
+              <CardContent className="p-6">
+                <div className="w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <span className="text-blue-400 text-2xl">⚡</span>
+                </div>
+                <h4 className="font-semibold text-white mb-2">Instant Processing</h4>
+                <p className="text-sm text-slate-400">Credits added to your account immediately</p>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-slate-800 border-slate-700 text-center">
+              <CardContent className="p-6">
+                <div className="w-16 h-16 bg-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <span className="text-purple-400 text-2xl">🎧</span>
+                </div>
+                <h4 className="font-semibold text-white mb-2">24/7 Support</h4>
+                <p className="text-sm text-slate-400">Get help whenever you need it</p>
+              </CardContent>
+            </Card>
           </div>
         </div>
-      </footer>
+      </main>
     </div>
   );
 }
 
-// Tesla-style Stripe Payment Form
+// Stripe Payment Form Component
 function StripePaymentForm({ 
   clientSecret, 
   isReady, 
@@ -402,9 +482,9 @@ function StripePaymentForm({
 }) {
   if (!stripePromise) {
     return (
-      <div className="p-6 bg-red-50 border border-red-200">
-        <p className="text-red-800 font-light">
-          Stripe not configured. Contact support.
+      <div className="p-4 bg-red-900/20 border border-red-700/50 rounded-lg">
+        <p className="text-red-400 text-sm">
+          Stripe is not configured. Please contact support.
         </p>
       </div>
     );
@@ -412,9 +492,9 @@ function StripePaymentForm({
 
   if (!isReady || !clientSecret) {
     return (
-      <div className="flex justify-center items-center py-12">
+      <div className="flex justify-center py-8">
         <LoadingSpinner />
-        <span className="ml-3 text-gray-600 font-light">Setting up payment...</span>
+        <span className="ml-2 text-slate-400">Setting up payment...</span>
       </div>
     );
   }
@@ -469,35 +549,38 @@ function StripeCheckoutForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8">
-      <div className="p-4 border border-gray-200 rounded-lg bg-gray-50">
-        <PaymentElement 
-          options={{
-            layout: "tabs"
-          }}
-        />
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <PaymentElement />
+      
+      <div className="bg-green-900/20 border border-green-700/50 rounded-lg p-3">
+        <div className="flex items-center space-x-2 text-sm">
+          <span className="text-green-400">🛡️</span>
+          <span className="text-green-400">Your payment information is encrypted and secure</span>
+        </div>
       </div>
 
       <Button
         type="submit"
         data-testid="button-complete-payment"
-        className="w-full bg-black text-white hover:bg-gray-800 py-4 text-lg font-medium rounded-full transition-all duration-200"
+        className="w-full bg-green-600 hover:bg-green-700 text-white py-4 text-lg shadow-lg shadow-green-600/30"
         disabled={!stripe || isProcessing}
       >
         {isProcessing ? (
-          <div className="flex items-center justify-center">
-            <LoadingSpinner size="sm" className="mr-3" />
-            Processing Payment...
-          </div>
+          <>
+            <LoadingSpinner size="sm" className="mr-2" />
+            Processing...
+          </>
         ) : (
-          `Complete Payment • $${amount}`
+          <>
+            🔒 Complete Payment - ${amount}
+          </>
         )}
       </Button>
     </form>
   );
 }
 
-// Tesla-style Trustly Form
+// Trustly Form Component
 function TrustlyForm({ 
   onSubmit, 
   isLoading, 
@@ -512,59 +595,67 @@ function TrustlyForm({
   });
 
   return (
-    <form onSubmit={trustlyForm.handleSubmit(onSubmit)} className="space-y-8">
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+    <form onSubmit={trustlyForm.handleSubmit(onSubmit)} className="space-y-4">
+      <div className="grid grid-cols-2 gap-4">
         <div>
+          <Label htmlFor="firstName" className="text-white">First Name</Label>
           <Input
+            id="firstName"
             data-testid="input-first-name"
-            placeholder="First Name"
-            className="h-12 border-0 border-b-2 border-gray-300 rounded-none bg-transparent focus:border-black focus:ring-0"
+            placeholder="Enter your first name"
+            className="bg-slate-700 border-slate-600 text-white placeholder-slate-400"
             {...trustlyForm.register("firstName")}
           />
           {trustlyForm.formState.errors.firstName && (
-            <p className="text-red-500 text-sm mt-2 font-light">
+            <p className="text-red-400 text-sm mt-1">
               {trustlyForm.formState.errors.firstName.message}
             </p>
           )}
         </div>
-
+        
         <div>
+          <Label htmlFor="lastName" className="text-white">Last Name</Label>
           <Input
+            id="lastName"
             data-testid="input-last-name"
-            placeholder="Last Name"
-            className="h-12 border-0 border-b-2 border-gray-300 rounded-none bg-transparent focus:border-black focus:ring-0"
+            placeholder="Enter your last name"
+            className="bg-slate-700 border-slate-600 text-white placeholder-slate-400"
             {...trustlyForm.register("lastName")}
           />
           {trustlyForm.formState.errors.lastName && (
-            <p className="text-red-500 text-sm mt-2 font-light">
+            <p className="text-red-400 text-sm mt-1">
               {trustlyForm.formState.errors.lastName.message}
             </p>
           )}
         </div>
       </div>
-
+      
       <div>
+        <Label htmlFor="email" className="text-white">Email Address</Label>
         <Input
+          id="email"
           data-testid="input-email"
           type="email"
-          placeholder="Email Address"
-          className="h-12 border-0 border-b-2 border-gray-300 rounded-none bg-transparent focus:border-black focus:ring-0"
+          placeholder="Enter your email address"
+          className="bg-slate-700 border-slate-600 text-white placeholder-slate-400"
           {...trustlyForm.register("email")}
         />
         {trustlyForm.formState.errors.email && (
-          <p className="text-red-500 text-sm mt-2 font-light">
+          <p className="text-red-400 text-sm mt-1">
             {trustlyForm.formState.errors.email.message}
           </p>
         )}
       </div>
-
+      
       <div>
+        <Label htmlFor="country" className="text-white">Country</Label>
         <select
+          id="country"
           data-testid="select-country"
-          className="w-full h-12 border-0 border-b-2 border-gray-300 rounded-none bg-transparent focus:border-black focus:outline-none text-gray-600"
+          className="w-full p-3 bg-slate-700 border border-slate-600 text-white rounded-md"
           {...trustlyForm.register("country")}
         >
-          <option value="">Select Country</option>
+          <option value="">Select your country</option>
           <option value="US">United States</option>
           <option value="CA">Canada</option>
           <option value="SE">Sweden</option>
@@ -576,25 +667,34 @@ function TrustlyForm({
           <option value="GB">United Kingdom</option>
         </select>
         {trustlyForm.formState.errors.country && (
-          <p className="text-red-500 text-sm mt-2 font-light">
+          <p className="text-red-400 text-sm mt-1">
             {trustlyForm.formState.errors.country.message}
           </p>
         )}
       </div>
 
+      <div className="bg-blue-900/20 border border-blue-700/50 rounded-lg p-3">
+        <div className="flex items-center space-x-2 text-sm">
+          <span className="text-blue-400">🏦</span>
+          <span className="text-blue-400">You'll be redirected to your bank to complete the transfer</span>
+        </div>
+      </div>
+
       <Button
         type="submit"
         data-testid="button-trustly-payment"
-        className="w-full bg-black text-white hover:bg-gray-800 py-4 text-lg font-medium rounded-full"
+        className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 text-lg shadow-lg shadow-blue-600/30"
         disabled={isLoading}
       >
         {isLoading ? (
-          <div className="flex items-center justify-center">
-            <LoadingSpinner size="sm" className="mr-3" />
+          <>
+            <LoadingSpinner size="sm" className="mr-2" />
             Processing...
-          </div>
+          </>
         ) : (
-          `Pay with Bank Transfer • $${amount}`
+          <>
+            🏦 Pay with Trustly - ${amount}
+          </>
         )}
       </Button>
     </form>
