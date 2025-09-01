@@ -192,49 +192,7 @@ export default function PaymentPage() {
               <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl pulse-slow"></div>
             </div>
 
-            {/* Content */}
-            <div className="relative z-10 py-20 px-6">
-              {/* Captain Cashout Brand */}
-              <div className="flex items-center justify-center space-x-4 mb-8 scale-in">
-                <div className="w-20 h-20 premium-gradient rounded-2xl flex items-center justify-center shadow-2xl glow-effect float-animation">
-                  <Zap className="w-12 h-12 text-white" />
-                </div>
-                <div className="text-center">
-                  <h1 className="text-6xl md:text-8xl font-black mb-8 bg-gradient-to-r from-cyan-300 via-blue-400 to-purple-500 bg-clip-text text-transparent leading-tight flex items-center justify-center gap-4 tracking-wider uppercase font-mono shimmer glow-effect transform hover:scale-105 transition-all duration-300 drop-shadow-2xl">
-                    Captain Cashout <Zap className="w-20 h-20 text-cyan-400 animate-pulse" />
-                  </h1>
-                  <p className="text-xl md:text-2xl text-slate-300 mb-12 max-w-3xl mx-auto leading-relaxed flex items-center justify-center gap-3">
-                    Experience lightning-fast, secure transactions with our cutting-edge payment platform
-                    <ArrowRight className="w-6 h-6 text-blue-400" />
-                  </p>
-                </div>
-              </div>
-
-              {/* Feature Cards */}
-              <div className="grid md:grid-cols-3 gap-8 mb-16">
-                <div className="bg-white/5 backdrop-blur-sm p-8 rounded-2xl border border-white/10 hover:bg-white/10 transition-all duration-300 hover:scale-105">
-                  <div className="mb-4">
-                    <Zap className="w-12 h-12 text-blue-400" />
-                  </div>
-                  <h3 className="text-xl font-semibold text-white mb-3">Lightning Fast</h3>
-                  <p className="text-slate-300">Process payments in milliseconds with our optimized infrastructure</p>
-                </div>
-                <div className="bg-white/5 backdrop-blur-sm p-8 rounded-2xl border border-white/10 hover:bg-white/10 transition-all duration-300 hover:scale-105">
-                  <div className="mb-4">
-                    <Shield className="w-12 h-12 text-green-400" />
-                  </div>
-                  <h3 className="text-xl font-semibold text-white mb-3">Bank-Grade Security</h3>
-                  <p className="text-slate-300">Your transactions are protected with enterprise-level encryption</p>
-                </div>
-                <div className="bg-white/5 backdrop-blur-sm p-8 rounded-2xl border border-white/10 hover:bg-white/10 transition-all duration-300 hover:scale-105">
-                  <div className="mb-4">
-                    <Globe className="w-12 h-12 text-purple-400" />
-                  </div>
-                  <h3 className="text-xl font-semibold text-white mb-3">Global Reach</h3>
-                  <p className="text-slate-300">Accept payments from customers worldwide with multi-currency support</p>
-                </div>
-              </div>
-            </div>
+            
           </div>
 
           <div className="grid lg:grid-cols-2 gap-8">
