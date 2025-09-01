@@ -706,24 +706,20 @@ function StripeCheckoutForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
-      <div className="p-4 border border-gray-200 rounded-lg bg-gray-50">
-        <PaymentElement 
-          options={{
-            layout: "tabs"
-          }}
-        />
+      <div className="[&_.Input]:border-0 [&_.Input]:border-b-2 [&_.Input]:border-gray-300 [&_.Input]:rounded-none [&_.Input]:h-12">
+        <PaymentElement />
       </div>
 
       <Button
         type="submit"
         data-testid="button-complete-payment"
-        className="w-full bg-black text-white hover:bg-gray-800 py-4 text-lg font-medium rounded-full transition-all duration-200"
+        className="w-full bg-black text-white hover:bg-gray-800 py-4 text-lg font-medium rounded-full"
         disabled={!stripe || isProcessing}
       >
         {isProcessing ? (
           <div className="flex items-center justify-center">
             <LoadingSpinner size="sm" className="mr-3" />
-            Processing Payment...
+            Processing...
           </div>
         ) : (
           `Complete Payment • $${amount}`
